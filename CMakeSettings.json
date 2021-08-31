@@ -7,10 +7,15 @@
       "inheritEnvironments": [ "msvc_x86" ],
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
-      "cmakeCommandArgs": "",
-      "buildCommandArgs": "",
       "ctestCommandArgs": "",
-      "cmakeToolchain": "C:/src/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      "cmakeToolchain": "C:/src/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "variables": [
+        {
+          "name": "CMAKE_CXX_FLAGS",
+          "value": "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /std:c++17",
+          "type": "STRING"
+        }
+      ]
     }
   ]
 }

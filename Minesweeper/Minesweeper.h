@@ -6,7 +6,6 @@
 #include <chrono>
 #include <gtkmm.h>
 
-
 namespace minesweeper {
 
 	enum class states { covered, uncovered, flagged };
