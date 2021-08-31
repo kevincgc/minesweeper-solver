@@ -8,6 +8,7 @@
 #include <chrono>
 #include "Minesweeper.h"
 
+
 using namespace minesweeper;
 
 tile::tile(int x, int y, int type, states tflag = states::covered) : tile_x(x), tile_y(y), tile_type(type), tile_status(tflag) { }
@@ -112,43 +113,43 @@ void MSGame::reset(int r, int c, int m) { // TODO: range checking on r, c and m
 	MSGame::reset();
 }
 
-int main()
-{
-	int rows = 16, columns = 30, mines = 99;
-
-	std::cout << "rows: ";
-	std::cin >> rows;
-	std::cout << "columns: ";
-	std::cin >> columns;
-	std::cout << "mines: ";
-	std::cin >> mines;
-	std::cout << "\n\n";
-	MSGame test(rows, columns, mines);
-
-	while (true) {
-
-		std::vector<tile> copied = test.returntiles();
-
-		for (int j = 0; j < rows; j++) {
-			for (int i = 0; i < columns; i++) {
-				if (copied[j * columns + i].return_type() != -1)
-					std::cout << copied[j * columns + i].return_type();
-				else
-					std::cout << "F";
-			}
-			std::cout << "\n";
-		}
-
-		std::cout << "rows: ";
-		std::cin >> rows;
-		std::cout << "columns: ";
-		std::cin >> columns;
-		std::cout << "mines: ";
-		std::cin >> mines;
-		std::cout << "\n\n";
-		test.reset(rows, columns, mines);
-	}
-}
+//int main()
+//{
+//	int rows = 16, columns = 30, mines = 99;
+//
+//	std::cout << "rows: ";
+//	std::cin >> rows;
+//	std::cout << "columns: ";
+//	std::cin >> columns;
+//	std::cout << "mines: ";
+//	std::cin >> mines;
+//	std::cout << "\n\n";
+//	MSGame test(rows, columns, mines);
+//
+//	while (true) {
+//
+//		std::vector<tile> copied = test.returntiles();
+//
+//		for (int j = 0; j < rows; j++) {
+//			for (int i = 0; i < columns; i++) {
+//				if (copied[j * columns + i].return_type() != -1)
+//					std::cout << copied[j * columns + i].return_type();
+//				else
+//					std::cout << "F";
+//			}
+//			std::cout << "\n";
+//		}
+//
+//		std::cout << "rows: ";
+//		std::cin >> rows;
+//		std::cout << "columns: ";
+//		std::cin >> columns;
+//		std::cout << "mines: ";
+//		std::cin >> mines;
+//		std::cout << "\n\n";
+//		test.reset(rows, columns, mines);
+//	}
+//}
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
 // Debug program: F5 or Debug > Start Debugging menu

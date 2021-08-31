@@ -4,7 +4,7 @@
 cmake_minimum_required (VERSION 3.8)
 
 # Add source to this project's executable.
-add_executable (Minesweeper "Minesweeper.cpp" "Minesweeper.h")
+add_executable (Minesweeper "Minesweeper.cpp" "game_window.cpp" "main.cpp")
 
 set(PKG_CONFIG_EXECUTABLE "C:/src/vcpkg/installed/x86-windows/tools/pkgconf/pkgconf.exe")
 find_package(PkgConfig)
