@@ -1,10 +1,11 @@
+//Main code for game logic
+
 #pragma once
 #include <iostream>
 #include <random>
 #include <iterator>
 #include <vector>
 #include <chrono>
-#include <gtkmm.h>
 
 namespace minesweeper {
 

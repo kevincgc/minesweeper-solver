@@ -1,6 +1,3 @@
-// Minesweeper.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <iostream>
 #include <random>
 #include <iterator>
@@ -112,52 +109,3 @@ void MSGame::reset(int r, int c, int m) { // TODO: range checking on r, c and m
 
 	MSGame::reset();
 }
-
-//int main()
-//{
-//	int rows = 16, columns = 30, mines = 99;
-//
-//	std::cout << "rows: ";
-//	std::cin >> rows;
-//	std::cout << "columns: ";
-//	std::cin >> columns;
-//	std::cout << "mines: ";
-//	std::cin >> mines;
-//	std::cout << "\n\n";
-//	MSGame test(rows, columns, mines);
-//
-//	while (true) {
-//
-//		std::vector<tile> copied = test.returntiles();
-//
-//		for (int j = 0; j < rows; j++) {
-//			for (int i = 0; i < columns; i++) {
-//				if (copied[j * columns + i].return_type() != -1)
-//					std::cout << copied[j * columns + i].return_type();
-//				else
-//					std::cout << "F";
-//			}
-//			std::cout << "\n";
-//		}
-//
-//		std::cout << "rows: ";
-//		std::cin >> rows;
-//		std::cout << "columns: ";
-//		std::cin >> columns;
-//		std::cout << "mines: ";
-//		std::cin >> mines;
-//		std::cout << "\n\n";
-//		test.reset(rows, columns, mines);
-//	}
-//}
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
