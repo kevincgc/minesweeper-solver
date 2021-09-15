@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+	<gresource prefix="/counter">
+		<file>c_0.png</file>
+		<file>c_1.png</file>
+		<file>c_2.png</file>
+		<file>c_3.png</file>
+		<file>c_4.png</file>
+		<file>c_5.png</file>
+		<file>c_6.png</file>
+		<file>c_7.png</file>
+		<file>c_8.png</file>
+		<file>c_9.png</file>
+	</gresource>
+	<gresource prefix="/mines">
+		<file>m_0.png</file>
+		<file>m_1.png</file>
+		<file>m_2.png</file>
+		<file>m_3.png</file>
+		<file>m_4.png</file>
+		<file>m_5.png</file>
+		<file>m_6.png</file>
+		<file>m_7.png</file>
+		<file>m_8.png</file>
+		<file>mine.png</file>
+		<file>incorrect.png</file>
+		<file>exploded.png</file>
+		<file>flagged.png</file>
+		<file>unchecked.png</file>
+	</gresource>
+	<gresource prefix="headicons">
+		<file>ok_head.png</file>
+		<file>lost_head.png</file>
+		<file>won_head.png</file>
+		<file>reset_head.png</file>
+		<file>clicked_head.png</file>
+	</gresource>
+</gresources>
