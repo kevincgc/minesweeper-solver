@@ -1,5 +1,4 @@
 #include "game_window.h"
-#include <iostream>
 
 game_window::game_window() {
 	//Base initialization
@@ -71,7 +70,8 @@ void game_window::initialize_icons() {
 	for (int i = 0; i < 10; i++) {
 		g_icons[(std::string)("c_" + std::to_string(i))] = Gdk::Pixbuf::create_from_resource("/counter/c_" + std::to_string(i) + ".png");
 	}
-
+	g_icons["c_neg"] = Gdk::Pixbuf::create_from_resource("/counter/c_neg.png");
+	
 	g_icons["ok_head"] = Gdk::Pixbuf::create_from_resource("/headicons/ok_head.png");
 	g_icons["lost_head"] = Gdk::Pixbuf::create_from_resource("/headicons/lost_head.png");
 	g_icons["clicked_head"] = Gdk::Pixbuf::create_from_resource("/headicons/clicked_head.png");
@@ -289,8 +289,8 @@ void game_window::on_mines_da_click_begin(Gdk::EventSequence* es, int button_num
 		}
 		else { // single key press = flag current cell
 			cells.push_back({ grid_x, grid_y });
-			redraw_cells(cells, game_window::draw_selection::flag);
 			m_game.set_flag(grid_x, grid_y);
+			redraw_cells(cells, game_window::draw_selection::flag);
 		}
 	}
 }
@@ -519,15 +519,13 @@ void game_window::redraw_cells(std::vector<std::pair<int, int>>& cells, game_win
 
 	if (draw_type == game_window::draw_selection::flag) {
 		for (auto& cell : cells) {
-			if (m_game.get_tile_state(cell.first, cell.second) == minesweeper::states::covered) {
+			if (m_game.get_tile_state(cell.first, cell.second) == minesweeper::states::flagged) {
 				Gdk::Cairo::set_source_pixbuf(cr, g_icons["flagged"], cell.first * 32, cell.second * 32);
 				cr->paint();
-				m_game.dec_remaining();
 			}
-			else if (m_game.get_tile_state(cell.first, cell.second) == minesweeper::states::flagged) {
+			else if (m_game.get_tile_state(cell.first, cell.second) == minesweeper::states::covered) {
 				Gdk::Cairo::set_source_pixbuf(cr, g_icons["unchecked"], cell.first * 32, cell.second * 32);
 				cr->paint();
-				m_game.inc_remaining();
 			}
 		}
 		game_window::update_mine_count();
@@ -573,16 +571,32 @@ void game_window::update_mine_count() {
 	int mines = m_game.get_remaining();
 
 	int digits[3];
-	for (int i = 2; i >= 0; i--) {
-		digits[i] = mines % 10;
-		mines /= 10;
-	}
+	if (mines >= 0) {
+		for (int i = 2; i >= 0; i--) {
+			digits[i] = mines % 10;
+			mines /= 10;
+		}
 
-	for (int i = 0; i < 3; i++) {
-		Gdk::Cairo::set_source_pixbuf(cr, g_icons["c_" + std::to_string(digits[i])], x_offset + i * icon_width, y_offset);
+		for (int i = 0; i < 3; i++) {
+			Gdk::Cairo::set_source_pixbuf(cr, g_icons["c_" + std::to_string(digits[i])], x_offset + i * icon_width, y_offset);
+			cr->paint();
+		}
+	}
+	else {
+		mines *= -1;
+		for (int i = 2; i >= 0; i--) {
+			digits[i] = mines % 10;
+			mines /= 10;
+		}
+
+		Gdk::Cairo::set_source_pixbuf(cr, g_icons["c_neg"], x_offset, y_offset);
 		cr->paint();
-	}
 
+		for (int i = 1; i < 3; i++) {
+			Gdk::Cairo::set_source_pixbuf(cr, g_icons["c_" + std::to_string(digits[i])], x_offset + i * icon_width, y_offset);
+			cr->paint();
+		}
+	}
 	main_da.queue_draw();
 }
 

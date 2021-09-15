@@ -11,6 +11,7 @@
 		<file>c_7.png</file>
 		<file>c_8.png</file>
 		<file>c_9.png</file>
+		<file>c_neg.png</file>
 	</gresource>
 	<gresource prefix="/mines">
 		<file>m_0.png</file>

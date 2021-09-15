@@ -1,3 +1,7 @@
+// Main code handling graphics, user input and interfaces with the game logic
+
+#pragma once
+
 #include <gtkmm.h>
 #include "Minesweeper.h"
 #include <map>
