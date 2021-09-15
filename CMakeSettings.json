@@ -16,6 +16,24 @@
           "type": "STRING"
         }
       ]
+    },
+    {
+      "name": "x86-Release",
+      "generator": "Ninja",
+      "configurationType": "RelWithDebInfo",
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x86" ],
+      "variables": [
+        {
+          "name": "CMAKE_CXX_FLAGS",
+          "value": "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /std:c++20",
+          "type": "STRING"
+        }
+      ]
     }
   ]
 }

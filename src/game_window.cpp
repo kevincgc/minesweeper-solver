@@ -23,6 +23,17 @@ game_window::game_window() {
 	main_da.set_draw_func(sigc::mem_fun(*this, &game_window::on_main_da_draw));
 	mines_da.set_draw_func(sigc::mem_fun(*this, &game_window::on_mines_da_draw));
 
+	//--keyboard events for mines da
+	key_controller = Gtk::EventControllerKey::create();
+	add_controller(key_controller);
+	key_controller->signal_key_pressed().connect(sigc::mem_fun(*this, &game_window::on_mines_da_key_pressed), false);
+
+	mines_mouse_motion = Gtk::EventControllerMotion::create();
+	mines_da.add_controller(mines_mouse_motion);
+	mines_mouse_motion->signal_enter().connect(mem_fun(*this, static_cast<void (game_window::*)(double, double)>(&game_window::on_mines_motion)));
+	mines_mouse_motion->signal_motion().connect(mem_fun(*this, static_cast<void (game_window::*)(double, double)>(&game_window::on_mines_motion)));
+	mines_mouse_motion->signal_leave().connect(mem_fun(*this, static_cast<void (game_window::*)()>(&game_window::on_mines_motion)));
+
 	//Connect Signals
 	//--drag for main drawingarea - only applies to the reset button
 	main_drag = Gtk::GestureDrag::create();
@@ -213,7 +224,6 @@ void game_window::on_main_da_drag_end(double x_offset, double y_offset) {
 }
 
 void game_window::on_mines_da_click_begin(Gdk::EventSequence* es, int button_num) {
-
 	if (m_game.get_game_state() == minesweeper::g_states::lost || m_game.get_game_state() == minesweeper::g_states::won)
 		return;
 
@@ -431,8 +441,12 @@ void game_window::on_mines_da_click_end(Gdk::EventSequence* es, int button_num) 
 					Gdk::Cairo::set_source_pixbuf(cr, g_icons["exploded"], 32 * x, 32 * y);
 				}
 				else {
-					if (m_game.get_tile_state(x, y) == minesweeper::states::flagged)
-						Gdk::Cairo::set_source_pixbuf(cr, g_icons["flagged"], 32 * x, 32 * y);
+					if (m_game.get_tile_state(x, y) == minesweeper::states::flagged) {
+						if (m_game.get_tile_type(x, y) == -1)
+							Gdk::Cairo::set_source_pixbuf(cr, g_icons["flagged"], 32 * x, 32 * y);
+						else
+							Gdk::Cairo::set_source_pixbuf(cr, g_icons["incorrect"], 32 * x, 32 * y);
+					}
 					else
 						Gdk::Cairo::set_source_pixbuf(cr, g_icons["mine"], 32 * x, 32 * y);
 				}
@@ -461,6 +475,39 @@ void game_window::on_mines_da_click_unpaired_release(double, double, guint butto
 	case(1): lclick_released = true; break;
 	case(3): rclick_released = true; break;
 	}
+}
+
+void game_window::on_mines_motion(double x, double y) {
+	mines_mouse_pos.first = x;
+	mines_mouse_pos.second = y;
+}
+
+void game_window::on_mines_motion() {
+	mines_mouse_pos.first = -1;
+	mines_mouse_pos.second = -1;
+}
+
+bool game_window::on_mines_da_key_pressed(guint keyval, guint, Gdk::ModifierType) {
+
+	if (keyval == 32) {
+		if (mines_mouse_pos.first == -1)
+			return false;
+		std::vector <std::pair<int, int>> cells;
+
+		int grid_x = mines_mouse_pos.first / 32, grid_y = mines_mouse_pos.second / 32;
+		if (m_game.get_tile_state(grid_x, grid_y) == minesweeper::states::uncovered) {
+			cells.push_back({ grid_x, grid_y });
+			cells = m_game.d_click_clear(grid_x, grid_y);
+			redraw_cells(cells, game_window::draw_selection::reveal);
+		}
+		else { // either flagged or unflagged, redraw and set_flag will flip it
+			cells.push_back({ grid_x, grid_y });
+			redraw_cells(cells, game_window::draw_selection::flag);
+			m_game.set_flag(grid_x, grid_y);
+		}
+	}
+
+	return false;
 }
 
 void game_window::redraw_cells(std::vector<std::pair<int, int>>& cells, game_window::draw_selection draw_type) {

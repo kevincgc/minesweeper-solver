@@ -36,6 +36,9 @@ protected:
 	void on_mines_da_click_end(Gdk::EventSequence* es, int button_num);
 	void on_mines_da_click_released(int, double, double, int);
 	void on_mines_da_click_unpaired_release(double, double, guint, Gdk::EventSequence*);
+	bool on_mines_da_key_pressed(guint keyval, guint, Gdk::ModifierType);
+	void on_mines_motion(double, double);
+	void on_mines_motion();
 
 	bool lclick_active = false;
 	bool rclick_active = false;
@@ -45,6 +48,7 @@ protected:
 	bool timer_handler();
 	std::pair<int, int> prev_revealed{ 0,0 };
 	std::pair<double, double> last_pos{ 0,0 };
+	std::pair<int, int> mines_mouse_pos{ -1,-1 };
 
 	void initialize_icons();
 	void update_mine_count();
@@ -57,10 +61,12 @@ protected:
 
 	Cairo::RefPtr<Cairo::ImageSurface> main_da_surface;
 	Cairo::RefPtr<Cairo::ImageSurface> mines_da_surface;
+
 	Glib::RefPtr<Gtk::GestureClick> lm_click;
 	Glib::RefPtr<Gtk::GestureClick> rm_click;
 	Glib::RefPtr<Gtk::GestureDrag> main_drag;
-
+	Glib::RefPtr<Gtk::EventControllerKey> key_controller;
+	Glib::RefPtr<Gtk::EventControllerMotion> mines_mouse_motion;
 };
 
 void draw_line(const Cairo::RefPtr<Cairo::Context>& cr, int x, int y, int dx, int dy, int line_width, double r, double g, double b);
