@@ -14,6 +14,11 @@
           "name": "CMAKE_CXX_FLAGS",
           "value": "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /std:c++20",
           "type": "STRING"
+        },
+        {
+          "name": "CMAKE_CXX_FLAGS_DEBUG",
+          "value": "/MDd /Zi /Ob0 /Od /RTC1",
+          "type": "STRING"
         }
       ]
     },
@@ -33,7 +38,8 @@
           "value": "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /std:c++20",
           "type": "STRING"
         }
-      ]
+      ],
+      "cmakeToolchain": "C:/src/vcpkg/scripts/buildsystems/vcpkg.cmake"
     }
   ]
 }

@@ -29,11 +29,14 @@
 		<file>flagged.png</file>
 		<file>unchecked.png</file>
 	</gresource>
-	<gresource prefix="headicons">
+	<gresource prefix="/headicons">
 		<file>ok_head.png</file>
 		<file>lost_head.png</file>
 		<file>won_head.png</file>
 		<file>reset_head.png</file>
 		<file>clicked_head.png</file>
+	</gresource>
+	<gresource prefix="/ui">
+		<file preprocess="xml-stripblanks">menu_bar.ui</file>
 	</gresource>
 </gresources>

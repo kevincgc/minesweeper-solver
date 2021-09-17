@@ -148,7 +148,6 @@ std::vector<std::pair<int, int>> MSGame::d_click_clear(int x, int y) {
 		if (!temp_vec.empty())
 			uncovered_tiles.insert(uncovered_tiles.end(), temp_vec.begin(), temp_vec.end());
 	}
-	remaining_uncleared -= uncovered_tiles.size();
 	return uncovered_tiles;
 }
 
@@ -171,12 +170,17 @@ std::vector<std::pair<int, int>> MSGame::l_click_clear(int x, int y) {
 	if (get_tile_type(x, y) > 0) {
 		game_tiles[y * columns + x].tile_state = states::uncovered;
 		remaining_uncleared--;
+		if (remaining_uncleared == 0)
+			current_state = minesweeper::g_states::won;
 		return { std::pair<int,int>{x, y} };
 	}
 
 	std::vector<std::pair<int, int>> uncovered_tiles;
 	MSGame::reveal_adj(uncovered_tiles, x, y);
 	remaining_uncleared -= uncovered_tiles.size();
+	if (remaining_uncleared == 0)
+		current_state = minesweeper::g_states::won;
+
 	return uncovered_tiles;
 }
 

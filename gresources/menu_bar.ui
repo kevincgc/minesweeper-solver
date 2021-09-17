@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+	<menu id='main_menubar'>
+		<submenu>
+			<attribute name='label' translatable='yes'>Game Settings</attribute>
+			<section>
+				<item>
+					<attribute name='label' translatable='yes'>Edit Game Settings</attribute>
+					<attribute name='action'>app.game_settings_edit</attribute>
+				</item>
+			</section>
+		</submenu>
+	</menu>
+</interface>

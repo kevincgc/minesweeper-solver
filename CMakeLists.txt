@@ -5,6 +5,7 @@ cmake_minimum_required (VERSION 3.8)
 
 project ("Minesweeper")
 
+find_program(XMLLINT NAMES xmllint REQUIRED)
 find_program(GLIB_COMPILE_RESOURCES NAMES glib-compile-resources REQUIRED)
 
 set(GRESOURCE_C m.gresources.c)
@@ -17,12 +18,12 @@ execute_process(
 	OUTPUT_VARIABLE GRESOURCE_DEPENDENCIES
 )
 string(REPLACE "\n" ";${CMAKE_CURRENT_SOURCE_DIR}/gresources/" GRESOURCE_DEPENDENCIES ${GRESOURCE_DEPENDENCIES})
-message(${GRESOURCE_DEPENDENCIES})
 list(POP_BACK GRESOURCE_DEPENDENCIES)
 
 add_custom_command(
 	OUTPUT ${GRESOURCE_C}
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/gresources
+	COMMAND set XMLLINT=${XMLLINT}
 	COMMAND ${GLIB_COMPILE_RESOURCES}
 	ARGS
 		--target=${CMAKE_CURRENT_BINARY_DIR}/${GRESOURCE_C}
@@ -39,7 +40,14 @@ add_custom_target(
 )
 
 # Add source to this project's executable.
-add_executable (Minesweeper "src/Minesweeper.cpp" "src/game_window.cpp" "src/main.cpp" ${CMAKE_CURRENT_BINARY_DIR}/${GRESOURCE_C})
+add_executable (Minesweeper "src/Minesweeper.cpp" "src/game_application.cpp" "src/game_window.cpp" "src/main.cpp" ${CMAKE_CURRENT_BINARY_DIR}/${GRESOURCE_C})
+
+SET(MS_LINKFLAGS ${CMAKE_CURRENT_SOURCE_DIR}/Minesweeper.res)
+SET_TARGET_PROPERTIES(Minesweeper PROPERTIES LINK_FLAGS ${MS_LINKFLAGS})
+
+if(NOT ${CMAKE_BUILD_TYPE} MATCHES "Debug")
+	target_link_options(Minesweeper PRIVATE "/SUBSYSTEM:WINDOWS" "/ENTRY:mainCRTStartup")
+endif()
 
 set_source_files_properties(
 	${CMAKE_CURRENT_BINARY_DIR}/${GRESOURCE_C}

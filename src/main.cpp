@@ -1,7 +1,8 @@
-#include "game_window.h"
+#include "game_application.h"
 
 int main(int argc, char* argv[]) {
-	auto app = Gtk::Application::create("jw.gtkmm.ms");
-
-	return app->make_window_and_run<game_window>(argc, argv);
+	auto app = game_application::create();
+	
+	const int status = app->run(argc, argv);
+	return status;
 }

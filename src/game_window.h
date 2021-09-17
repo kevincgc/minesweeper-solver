@@ -1,21 +1,42 @@
 // Main code handling graphics, user input and interfaces with the game logic
 
 #pragma once
+#include <gtkmm/fixed.h>
+#include <gtkmm/drawingarea.h>
+#include <gtkmm/gestureclick.h>
+#include <gtkmm/gesturedrag.h>
+#include <gtkmm/eventcontrollerkey.h>
+#include <gtkmm/eventcontrollermotion.h>
+#include <gtkmm/applicationwindow.h>
+#include <gdkmm/pixbuf.h>
+#include <gdkmm/general.h>
+#include <glibmm/main.h>
+#include <gtkmm/grid.h>
+#include <gtkmm/button.h>
+#include <gtkmm/checkbutton.h>
+#include <gtkmm/separator.h>
+#include <gtkmm/box.h>
+#include <gtkmm/entry.h>
+#include <gtkmm/label.h>
+#include <sigc++/trackable.h>
+#include <sigc++/signal.h>
 
-#include <gtkmm.h>
 #include "Minesweeper.h"
 #include <map>
-#include <gtk/gtk.h>
 
+// RGB value (same across all three channels) for dark_gray colour used in game
 const double dark_gray = 123.0 / 255.0;
+// RGB value (same across all three channels) for light_gray colour used in game
 const double light_gray = 189.0 / 255.0;
 
-class game_window : public Gtk::Window {
+class game_window : public Gtk::ApplicationWindow, public sigc::trackable {
 public:
 	game_window();
-
-protected:
+	game_window(int, int, int, int);
+	friend class game_application;
 	Gtk::Fixed g_fixed;
+protected:
+
 	Gtk::DrawingArea main_da;
 	Gtk::DrawingArea mines_da;
 
@@ -25,6 +46,7 @@ protected:
 	int game_height = 16;
 	int game_width = 30;
 	int game_mines = 99;
+	int selection = 2; // Easy = 0; Medium = 1; Hard = 2; Custom = 3;
 	minesweeper::MSGame m_game{ 16, 30, 99 };
 	sigc::connection timer_connection;
 
@@ -54,14 +76,15 @@ protected:
 	std::pair<double, double> last_pos{ 0,0 };
 	std::pair<int, int> mines_mouse_pos{ -1,-1 };
 
+	void initialize_window();
 	void initialize_icons();
 	void update_mine_count();
 	void update_head(std::string h_string);
 	void update_timer();
 
-	enum class draw_selection{ flag, blank_uncover, re_cover, reveal };
+	enum class draw_selection { flag, blank_uncover, re_cover, reveal };
 
-	void redraw_cells(std::vector<std::pair<int, int>>& cells, draw_selection draw_type); 
+	void redraw_cells(std::vector<std::pair<int, int>>& cells, draw_selection draw_type);
 
 	Cairo::RefPtr<Cairo::ImageSurface> main_da_surface;
 	Cairo::RefPtr<Cairo::ImageSurface> mines_da_surface;
@@ -76,3 +99,32 @@ protected:
 void draw_line(const Cairo::RefPtr<Cairo::Context>& cr, int x, int y, int dx, int dy, int line_width, double r, double g, double b);
 
 void draw_rect_filled(const Cairo::RefPtr<Cairo::Context>& cr, int x, int y, int dx, int dy, double r, double g, double b);
+
+class settings_window : public Gtk::Window {
+public:
+	settings_window();
+	settings_window(int height, int width, int mines, int selection);
+
+	using update_game_signal = sigc::signal<void(int, int, int, int)>;
+	update_game_signal signal_update_game();
+
+protected:
+	Gtk::Button apply_button;
+	Gtk::CheckButton rad_buttons[4];
+	Gtk::Separator box_separator;
+	Gtk::Grid main_grid, top_grid, bottom_grid;
+	Gtk::Entry custom_num_entries[3];
+	Gtk::Label num_labels[4];
+	Gtk::Label description_labels[4][3];
+
+	int game_height = 16;
+	int game_width = 30;
+	int game_mines = 99;
+	int selection = 2; // Easy = 0; Medium = 1; Hard = 2; Custom = 3;
+
+	void initialize_settings();
+	void on_text_entry_input(int entry_num);
+	void on_click_apply_button();
+
+	update_game_signal settings_signal;
+};

@@ -79,8 +79,45 @@ namespace minesweeper {
 		void inc_remaining() { remaining_mines++; }
 		void dec_remaining() { remaining_mines--; }
 
+		/// <summary>
+		/// Applies double-click input on tile located at (x,y).
+		/// If tile is covered or flagged, the function does nothing.
+		/// 
+		/// If the tile is uncovered, it will check to see if it the
+		/// number of flagged tiles around it equals the number of mines
+		/// that are surrounding it. If true, left click inputs will be
+		/// called on all surrounding tiles to reveal any unrevealed tiles.
+		/// </summary>
+		/// <param name="x">x-position</param>
+		/// <param name="y">y-position</param>
+		/// <returns>vector of std::pairs for coordinates of all
+		/// tiles that changed states as a result of this action</returns>
 		std::vector<std::pair<int,int>> d_click_clear(int x, int y);
+
+		/// <summary>
+		/// Applies left-click input on tile located at (x,y).
+		/// If tile is uncovered or flagged, the function does nothing.
+		/// 
+		/// If the tile is a mine, it will trigger game lose.
+		/// If the tile has no mines surrounding it, it will bfs all surrounding
+		/// tiles to reveal them as well.
+		/// If the tile has mines surrounding it, it will just reveal this tile.
+		/// </summary>
+		/// <param name="x">x-position</param>
+		/// <param name="y">y-position</param>
+		/// <returns>vector of std::pairs for coordinates of all
+		/// tiles that changed states as a result of this action</returns>
 		std::vector<std::pair<int, int>> l_click_clear(int x, int y);
+
+		/// <summary>
+		/// Helper function to left-click and right-click actions. Does
+		/// BFS search to uncover all eligible tiles.
+		/// </summary>
+		/// <param name="u_tiles">Vector of coordinate pairs passed in by reference.
+		/// It will append to the vector any new tiles that change states as a result
+		/// of this function.</param>
+		/// <param name="x">x-position</param>
+		/// <param name="y">y-position</param>
 		void reveal_adj(std::vector<std::pair<int, int>>& u_tiles, int x, int y);
 
 		int get_rows() { return rows; };
@@ -101,6 +138,21 @@ namespace minesweeper {
 		g_states current_state = g_states::new_game;
 	};
 
+	/// <summary>
+	/// Performs Fisher-yates shuffle on elements contained within Container T.
+	/// Uses std::chrono::system_clock to seed a mt19937 engine to generate
+	/// random vals for swapping.
+	/// 
+	/// Optionally allows for shuffling < size of the container. If this is selected
+	/// the first shuffle_number elements of container will contained randomly chosen
+	/// elements. Remaining elements are not guaranteed to have random positions relative
+	/// to initial positions.
+	/// </summary>
+	/// <typeparam name="T">Must have iterator .begin() and .end() defined.
+	/// Must be MoveAssignable and MoveConstructible.</typeparam>
+	/// <param name="arr">Container to be shuffled</param>
+	/// <param name="shuffle_number"># of elements to shuffle. Defaults to 0; returns if less than 0;
+	/// automatically set to size of arr if greater than size of arr</param>
 	template <class T>
 	void fy_shuffle(T& arr, int shuffle_number = 0) { // implementation of fisher yates shuffle
 
@@ -109,7 +161,7 @@ namespace minesweeper {
 
 		int arr_size = static_cast<int> (arr.end() - arr.begin());
 
-		if (shuffle_number == 0 || shuffle_number == arr_size)
+		if (shuffle_number == 0 || shuffle_number >= arr_size)
 			shuffle_number = arr_size - 1;
 
 		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();

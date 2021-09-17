@@ -1,16 +1,32 @@
 #include "game_window.h"
 
 game_window::game_window() {
+	game_window::initialize_window();
+}
+
+game_window::game_window(int new_h, int new_w, int new_m, int new_selection) {
+
+	game_height = new_h;
+	game_width = new_w;
+	game_mines = new_m;
+	selection = new_selection;
+
+	m_game.reset(new_h, new_w, new_m);
+
+	game_window::initialize_window();
+}
+
+void game_window::initialize_window() {
 	//Base initialization
 	set_title("Minesweeper");
-	set_default_size(1000, 636);
 	initialize_icons();
-	g_fixed.set_size_request(1000, 636);
+	set_size_request(1, 1);
+	g_fixed.set_size_request(40 + 32 * game_width, 124 + 32 * game_height);
 	set_child(g_fixed);
 
 	//Main Drawingarea
-	main_da.set_content_width(1000);
-	main_da.set_content_height(636);
+	main_da.set_content_width(40 + 32 * game_width);
+	main_da.set_content_height(124 + 32 * game_height);
 	g_fixed.put(main_da, 0, 0);
 
 	//Mines Drawingarea
@@ -71,7 +87,7 @@ void game_window::initialize_icons() {
 		g_icons[(std::string)("c_" + std::to_string(i))] = Gdk::Pixbuf::create_from_resource("/counter/c_" + std::to_string(i) + ".png");
 	}
 	g_icons["c_neg"] = Gdk::Pixbuf::create_from_resource("/counter/c_neg.png");
-	
+
 	g_icons["ok_head"] = Gdk::Pixbuf::create_from_resource("/headicons/ok_head.png");
 	g_icons["lost_head"] = Gdk::Pixbuf::create_from_resource("/headicons/lost_head.png");
 	g_icons["clicked_head"] = Gdk::Pixbuf::create_from_resource("/headicons/clicked_head.png");
@@ -455,7 +471,7 @@ void game_window::on_mines_da_click_end(Gdk::EventSequence* es, int button_num) 
 		}
 	}
 	if (m_game.get_game_state() == minesweeper::g_states::won) {
-		timer_connection.disconnect();//do win stuff here;
+		timer_connection.disconnect();
 		update_head("won_head");
 	}
 
@@ -490,6 +506,9 @@ void game_window::on_mines_motion() {
 bool game_window::on_mines_da_key_pressed(guint keyval, guint, Gdk::ModifierType) {
 
 	if (keyval == 32) {
+		if (m_game.get_game_state() != minesweeper::g_states::in_progress && m_game.get_game_state() != minesweeper::g_states::new_game)
+			return false;
+
 		if (mines_mouse_pos.first == -1)
 			return false;
 		std::vector <std::pair<int, int>> cells;
@@ -502,9 +521,46 @@ bool game_window::on_mines_da_key_pressed(guint keyval, guint, Gdk::ModifierType
 		}
 		else { // either flagged or unflagged, redraw and set_flag will flip it
 			cells.push_back({ grid_x, grid_y });
-			redraw_cells(cells, game_window::draw_selection::flag);
 			m_game.set_flag(grid_x, grid_y);
+			redraw_cells(cells, game_window::draw_selection::flag);
 		}
+
+		if (m_game.get_game_state() == minesweeper::g_states::lost) {
+			timer_connection.disconnect();//do lose stuff here;
+			update_head("lost_head");
+
+			auto cr = Cairo::Context::create(mines_da_surface);
+
+			for (int x = 0; x < m_game.get_cols(); x++) {
+				for (int y = 0; y < m_game.get_rows(); y++) {
+					int tile_type = m_game.get_tile_type(x, y);
+					if (tile_type >= 0)
+						continue;
+
+					if (tile_type == -2) {
+						Gdk::Cairo::set_source_pixbuf(cr, g_icons["exploded"], 32 * x, 32 * y);
+					}
+					else {
+						if (m_game.get_tile_state(x, y) == minesweeper::states::flagged) {
+							if (m_game.get_tile_type(x, y) == -1)
+								Gdk::Cairo::set_source_pixbuf(cr, g_icons["flagged"], 32 * x, 32 * y);
+							else
+								Gdk::Cairo::set_source_pixbuf(cr, g_icons["incorrect"], 32 * x, 32 * y);
+						}
+						else
+							Gdk::Cairo::set_source_pixbuf(cr, g_icons["mine"], 32 * x, 32 * y);
+					}
+					cr->paint();
+				}
+			}
+		}
+		if (m_game.get_game_state() == minesweeper::g_states::won) {
+			timer_connection.disconnect();
+			update_head("won_head");
+		}
+
+		mines_da.queue_draw();
+		main_da.queue_draw();
 	}
 
 	return false;
@@ -642,4 +698,145 @@ void draw_rect_filled(const Cairo::RefPtr<Cairo::Context>& cr, int x, int y, int
 	cr->set_source_rgb(r, g, b);
 	cr->rectangle(x, y, dx, dy);
 	cr->fill();
+}
+
+settings_window::settings_window() {
+	initialize_settings();
+}
+
+settings_window::settings_window(int height, int width, int mines, int sel) {
+	game_height = height;
+	game_width = width;
+	game_mines = mines;
+	selection = sel;
+
+	initialize_settings();
+
+}
+
+void settings_window::initialize_settings() {
+
+	set_title("Game Settings");
+	set_child(main_grid);
+	apply_button = Gtk::Button("New Game");
+	set_default_widget(apply_button);
+	set_resizable(false);
+
+	num_labels[0].set_markup("<b>Easy</b>");
+	num_labels[1].set_markup("<b>Medium</b>");
+	num_labels[2].set_markup("<b>Hard</b>");
+	num_labels[3].set_markup("<b>Custom</b>");
+
+	for (int i = 0; i < 4; i++) {
+		num_labels[i].set_width_chars(15);
+		num_labels[i].set_margin(5);
+		num_labels[i].set_xalign(0.0);
+	}
+
+	for (int i = 1; i < 4; i++) {
+		rad_buttons[i].set_group(rad_buttons[0]);
+	}
+	rad_buttons[2].set_active();
+
+	description_labels[0][0].set_text("Height");
+	description_labels[0][1].set_text("Width");
+	description_labels[0][2].set_text("Mines");
+	description_labels[1][0].set_text("9");
+	description_labels[1][1].set_text("9");
+	description_labels[1][2].set_text("10");
+	description_labels[2][0].set_text("16");
+	description_labels[2][1].set_text("16");
+	description_labels[2][2].set_text("40");
+	description_labels[3][0].set_text("16");
+	description_labels[3][1].set_text("30");
+	description_labels[3][2].set_text("99");
+
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 3; j++) {
+			description_labels[i][j].set_width_chars(10);
+			description_labels[i][j].set_xalign(0.0);
+			top_grid.attach(description_labels[i][j], j + 2, i);
+		}
+	}
+
+	for (int i = 1; i < 5; i++) {
+		top_grid.attach(rad_buttons[i - 1], 0, i);
+		top_grid.attach(num_labels[i - 1], 1, i);
+	}
+
+	for (int i = 0; i < 3; i++) {
+		custom_num_entries[i].set_max_length(3);
+		custom_num_entries[i].set_width_chars(3);
+		custom_num_entries[i].set_max_width_chars(3);
+		custom_num_entries[i].signal_changed().connect(sigc::bind(sigc::mem_fun(*this, &settings_window::on_text_entry_input), i));
+		top_grid.attach(custom_num_entries[i], i + 2, 4);
+	}
+
+	bottom_grid.attach(apply_button, 0, 0);
+	box_separator.set_hexpand(true);
+	box_separator.set_margin_bottom(10);
+	apply_button.set_expand(false);
+	apply_button.signal_clicked().connect(sigc::mem_fun(*this, &settings_window::on_click_apply_button));
+
+	main_grid.set_margin(10);
+	main_grid.attach(top_grid, 0, 0);
+	main_grid.attach(box_separator, 0, 1);
+	main_grid.attach(bottom_grid, 0, 2);
+
+}
+
+void settings_window::on_text_entry_input(int entry_num) {
+	auto text = custom_num_entries[entry_num].get_text();
+	Glib::ustring new_text;
+	bool changed = false;
+	for (auto c : text) {
+		if (c >= 48 && c <= 57)
+			new_text.push_back(c);
+		else
+			changed = true;
+	}
+	for (int i = 0; i < 3; i++) {
+		rad_buttons[i].set_active(false);
+	}
+	rad_buttons[3].set_active();
+
+	if (changed) {
+		custom_num_entries[entry_num].set_text(new_text);
+	}
+}
+
+void settings_window::on_click_apply_button() {
+	for (int i = 0; i < 4; i++) {
+		if (rad_buttons[i].get_active()) {
+			selection = i;
+			break;
+		}
+	}
+
+	switch (selection) {
+	case 0:
+		game_height = 9; game_width = 9; game_mines = 10; selection = 0; break;
+	case 1:
+		game_height = 16; game_width = 16; game_mines = 40; selection = 1;  break;
+	case 2:
+		game_height = 16; game_width = 30; game_mines = 99; selection = 2; break;
+	case 3:
+		game_height = stoi(std::string(custom_num_entries[0].get_text()));
+		game_height = std::max(game_height, 1);
+		game_height = std::min(game_height, 99);
+		game_width = stoi(std::string(custom_num_entries[1].get_text()));
+		game_width = std::max(game_width, 8);
+		game_width = std::min(game_width, 99);
+		game_mines = stoi(std::string(custom_num_entries[2].get_text()));
+		game_mines = std::max(game_mines, 1);
+		game_mines = std::min(game_mines, game_height * game_width - 1);
+		selection = 3;
+		break;
+	}
+	hide();
+	settings_signal.emit(game_height, game_width, game_mines, selection);
+}
+
+settings_window::update_game_signal settings_window::signal_update_game() {
+	return settings_signal;
 }
