@@ -4,6 +4,7 @@ using namespace minesweeper;
 
 tile::tile(int x, int y, int type, states tflag = states::covered) : tile_x(x), tile_y(y), tile_type(type), tile_state(tflag) { }
 
+// Flip flag state
 void tile::flip_flag() {
 	switch (tile_state) {
 	case states::covered:
@@ -15,6 +16,7 @@ void tile::flip_flag() {
 	}
 }
 
+// Initialize a game. Occurs when game state goes from new_game to in_progress
 void MSGame::initialize_game(int initial_x, int initial_y) {
 	remaining_uncleared = rows * columns - mines;
 	int new_mines = 0;
@@ -91,7 +93,6 @@ int MSGame::check_adjacent_flags(int x, int y) {
 
 		if (get_tile_state(new_x, new_y) == states::flagged)
 			++entities;
-
 	}
 
 	return entities;
@@ -114,6 +115,7 @@ void MSGame::reset(int r, int c, int m) { // TODO: range checking on r, c and m
 	MSGame::reset();
 }
 
+// Apply right click operation
 int MSGame::set_flag(int x, int y) {
 	if (get_tile_state(x, y) == states::uncovered)
 		return -1;
@@ -129,6 +131,7 @@ int MSGame::set_flag(int x, int y) {
 	return 0;
 }
 
+// Apply double mouse click operation
 std::vector<std::pair<int, int>> MSGame::d_click_clear(int x, int y) {
 	if (get_tile_state(x, y) != states::uncovered)
 		return {};
@@ -144,6 +147,7 @@ std::vector<std::pair<int, int>> MSGame::d_click_clear(int x, int y) {
 		if (new_x < 0 || new_y < 0 || new_x >= columns || new_y >= rows)
 			continue;
 
+		// run left clicks on all adjacent tiles
 		auto temp_vec = l_click_clear(new_x, new_y);
 		if (!temp_vec.empty())
 			uncovered_tiles.insert(uncovered_tiles.end(), temp_vec.begin(), temp_vec.end());
@@ -151,6 +155,7 @@ std::vector<std::pair<int, int>> MSGame::d_click_clear(int x, int y) {
 	return uncovered_tiles;
 }
 
+// Apply left click operation
 std::vector<std::pair<int, int>> MSGame::l_click_clear(int x, int y) {
 
 	if (current_state == g_states::new_game) {
@@ -175,6 +180,7 @@ std::vector<std::pair<int, int>> MSGame::l_click_clear(int x, int y) {
 		return { std::pair<int,int>{x, y} };
 	}
 
+	// reveal_adj is BFS helper function
 	std::vector<std::pair<int, int>> uncovered_tiles;
 	MSGame::reveal_adj(uncovered_tiles, x, y);
 	remaining_uncleared -= uncovered_tiles.size();

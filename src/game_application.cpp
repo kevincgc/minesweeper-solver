@@ -10,6 +10,7 @@ Glib::RefPtr<game_application> game_application::create() {
 void game_application::on_startup() {
 	Gtk::Application::on_startup();
 	
+	// Add menubar to game_window
 	g_refBuilder = Gtk::Builder::create();
 	g_refBuilder->add_from_resource("/ui/menu_bar.ui");
 
@@ -36,6 +37,8 @@ bool game_application::on_app_close() {
 }
 
 void game_application::on_new_game_settings(int height, int width, int mines, int selection) {
+	// Generate new game_window with new settings. Doing this instead of updating existing window
+	// as this seems to be the only way to automatically resize the window
 	delete g_window;
 	g_window = new game_window(height, width, mines, selection);
 	add_window(*g_window);
@@ -43,16 +46,10 @@ void game_application::on_new_game_settings(int height, int width, int mines, in
 	g_window->show();
 }
 
-//bool game_application::on_settings_menu_close() {
-//	game_application::on_settings_window_hide();
-//	return true;
-//}
-
 void game_application::on_menu_game_settings() {
 	delete s_window;
 	s_window = new settings_window(g_window->get_height(), g_window->get_width(), g_window->game_mines, g_window->selection);
 	add_window(*s_window);
 	s_window->signal_update_game().connect(sigc::mem_fun(*this, &game_application::on_new_game_settings));
-
 	s_window->show();
 }

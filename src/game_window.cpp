@@ -38,16 +38,6 @@ void game_window::initialize_window() {
 	main_da.set_draw_func(sigc::mem_fun(*this, &game_window::on_main_da_draw));
 	mines_da.set_draw_func(sigc::mem_fun(*this, &game_window::on_mines_da_draw));
 
-	//--keyboard events for mines da
-	key_controller = Gtk::EventControllerKey::create();
-	add_controller(key_controller);
-	key_controller->signal_key_pressed().connect(sigc::mem_fun(*this, &game_window::on_mines_da_key_pressed), false);
-
-	mines_mouse_motion = Gtk::EventControllerMotion::create();
-	mines_da.add_controller(mines_mouse_motion);
-	mines_mouse_motion->signal_enter().connect(mem_fun(*this, static_cast<void (game_window::*)(double, double)>(&game_window::on_mines_motion)));
-	mines_mouse_motion->signal_motion().connect(mem_fun(*this, static_cast<void (game_window::*)(double, double)>(&game_window::on_mines_motion)));
-	mines_mouse_motion->signal_leave().connect(mem_fun(*this, static_cast<void (game_window::*)()>(&game_window::on_mines_motion)));
 
 	//Connect Signals
 	//--drag for main drawingarea - only applies to the reset button
@@ -58,6 +48,18 @@ void game_window::initialize_window() {
 	main_drag->signal_drag_update().connect(sigc::mem_fun(*this, &game_window::on_main_da_drag_update));
 	main_drag->signal_drag_end().connect(sigc::mem_fun(*this, &game_window::on_main_da_drag_end));
 
+	//--keyboard events for mines da - processes spacebar inputs
+	key_controller = Gtk::EventControllerKey::create();
+	add_controller(key_controller);
+	key_controller->signal_key_pressed().connect(sigc::mem_fun(*this, &game_window::on_mines_da_key_pressed), false);
+
+	//--mouse motion events for mines da - tracks mouse position for spacebar inputs
+	mines_mouse_motion = Gtk::EventControllerMotion::create();
+	mines_da.add_controller(mines_mouse_motion);
+	mines_mouse_motion->signal_enter().connect(mem_fun(*this, static_cast<void (game_window::*)(double, double)>(&game_window::on_mines_motion)));
+	mines_mouse_motion->signal_motion().connect(mem_fun(*this, static_cast<void (game_window::*)(double, double)>(&game_window::on_mines_motion)));
+	mines_mouse_motion->signal_leave().connect(mem_fun(*this, static_cast<void (game_window::*)()>(&game_window::on_mines_motion)));
+
 	//--gestureclicks for mines da
 	lm_click = Gtk::GestureClick::create();
 	lm_click->set_button(1);
@@ -66,6 +68,24 @@ void game_window::initialize_window() {
 	rm_click->set_button(3);
 	mines_da.add_controller(rm_click);
 
+	/*
+	There are three types of mouse events to be processed for mines_da: single left click, single right click,
+	(left and right) click.
+	
+	-signal_begin fires when a button is pressed.
+	-signal_update fires when the mouse moves while the signal for the button is still active
+	-signal_end fires when the signal for the button is inactivated
+	-signal_released fires when the mouse button is released while the signal for it is still active
+	-signal_unpaired_release fires when the mouse button is released when the signal for it is inactive
+
+	Because of how the eventcontroller for GestureClick is written, only one signal can be active at a time, which
+	complicates the logic for (left and right) clicks. If a button is pressed and kept pressed while a second button is pressed,
+	the first signal will end and fire signal_end and then fire a signal_begin for the second button.
+
+	Eventhandlers below use a combination of the states of the signals (active, inactive, released, not released) to determine
+	how many buttons are currently depressed and which input to process.
+	
+	*/
 	lm_click->signal_begin().connect(sigc::bind(sigc::mem_fun(*this, &game_window::on_mines_da_click_begin), 1));
 	rm_click->signal_begin().connect(sigc::bind(sigc::mem_fun(*this, &game_window::on_mines_da_click_begin), 3));
 
@@ -82,7 +102,7 @@ void game_window::initialize_window() {
 	rm_click->signal_unpaired_release().connect(sigc::mem_fun(*this, &game_window::on_mines_da_click_unpaired_release));
 }
 
-void game_window::initialize_icons() {
+void game_window::initialize_icons() {// Load icons from gresources for use
 	for (int i = 0; i < 10; i++) {
 		g_icons[(std::string)("c_" + std::to_string(i))] = Gdk::Pixbuf::create_from_resource("/counter/c_" + std::to_string(i) + ".png");
 	}
@@ -107,7 +127,7 @@ void game_window::initialize_icons() {
 
 void game_window::on_main_da_draw(const Cairo::RefPtr<Cairo::Context>& cr, int width, int height) {
 
-	if (!main_da_surface) {	// If main_da_surface==NULL, initialize
+	if (!main_da_surface) {	// If main_da_surface==NULL, nothing has been drawn yet, so intialize
 		main_da_surface = Cairo::ImageSurface::create(Cairo::Surface::Format::ARGB32, width, height);
 		auto new_cr = Cairo::Context::create(main_da_surface);
 
@@ -157,10 +177,11 @@ void game_window::on_main_da_draw(const Cairo::RefPtr<Cairo::Context>& cr, int w
 }
 
 void game_window::on_mines_da_draw(const Cairo::RefPtr<Cairo::Context>& cr, int width, int height) {
-	if (!mines_da_surface) {
+	if (!mines_da_surface) {	// If mines_da_surface==NULL, nothing has been drawn yet, so intialize
 		mines_da_surface = Cairo::ImageSurface::create(Cairo::Surface::Format::ARGB32, width, height);
 		auto new_cr = Cairo::Context::create(mines_da_surface);
 
+		// Draw a grid of covered game tiles
 		for (int i = 0; i < m_game.get_rows(); i++) {
 			for (int j = 0; j < m_game.get_cols(); j++) {
 				Gdk::Cairo::set_source_pixbuf(new_cr, g_icons["unchecked"], 32 * j, 32 * i);
@@ -316,7 +337,7 @@ void game_window::on_mines_da_click_update(Gdk::EventSequence* es, int button_nu
 	if (m_game.get_game_state() == minesweeper::g_states::lost || m_game.get_game_state() == minesweeper::g_states::won)
 		return;
 
-	double pix_x, pix_y;
+	double pix_x = 0, pix_y = 0;
 	if (button_num == 1)
 		lm_click->get_point(es, pix_x, pix_y);
 	else if (button_num == 3)
@@ -498,7 +519,7 @@ void game_window::on_mines_motion(double x, double y) {
 	mines_mouse_pos.second = y;
 }
 
-void game_window::on_mines_motion() {
+void game_window::on_mines_motion() {	// If no params passed, this was called by mouse leaving the box
 	mines_mouse_pos.first = -1;
 	mines_mouse_pos.second = -1;
 }
@@ -673,7 +694,6 @@ void game_window::update_timer() {
 	}
 
 	main_da.queue_draw();
-
 }
 
 void game_window::update_head(std::string h_string) {
@@ -711,11 +731,10 @@ settings_window::settings_window(int height, int width, int mines, int sel) {
 	selection = sel;
 
 	initialize_settings();
-
 }
 
 void settings_window::initialize_settings() {
-
+	// Base initialization
 	set_title("Game Settings");
 	set_child(main_grid);
 	apply_button = Gtk::Button("New Game");
@@ -813,6 +832,8 @@ void settings_window::on_click_apply_button() {
 		}
 	}
 
+	// Parse the correct settings.
+	// For custom games, this does checking against min/max values of the game settings
 	switch (selection) {
 	case 0:
 		game_height = 9; game_width = 9; game_mines = 10; selection = 0; break;

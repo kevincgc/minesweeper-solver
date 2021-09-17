@@ -143,8 +143,8 @@ namespace minesweeper {
 	/// Uses std::chrono::system_clock to seed a mt19937 engine to generate
 	/// random vals for swapping.
 	/// 
-	/// Optionally allows for shuffling < size of the container. If this is selected
-	/// the first shuffle_number elements of container will contained randomly chosen
+	/// Optionally allows for shuffling # elements < size of the container. If this is selected
+	/// the first shuffle_number elements of container will be randomly chosen
 	/// elements. Remaining elements are not guaranteed to have random positions relative
 	/// to initial positions.
 	/// </summary>
