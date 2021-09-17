@@ -10,3 +10,11 @@ Both of  these are precompiled builds targetting Windows x86.
 
 If compiling on MS Visual Studio, I recommend using vcpkg to install GTKMM and required dependencies. However, the current version of vcpkg (at the time of writing) has a known bug where the GTKMM libraries cannot be included as-is - it requires additional configuration with pkgconf to setup the environment. I've written instructions for setting this up which can be found here: [VStudio GTKMM Install Guide](https://gist.github.com/jerrywang94/ffd370d2e42918817bbfb765def7d771).
 
+## How to play
+
+- **Left click** on an empty square to reveal it
+- **Right click** to flag/unflag an unrevealed square
+- **Left+Right click** a number to reveal all adjacent squares (if there is the correct number of adjacent squares flagged)
+- **Space bar** while hovering over an unrevealed square to flag/unflag it, or over a number to reveal all adjacent squares
+
+Game settings menu on the top left to configure the game.
