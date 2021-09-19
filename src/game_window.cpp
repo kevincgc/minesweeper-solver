@@ -513,7 +513,7 @@ void game_window::on_mines_da_click_unpaired_release(double, double, guint butto
 	case(3): rclick_released = true; break;
 	}
 
-	if (lclick_released && rclick_released)
+	if (lclick_released && rclick_released && (m_game.get_game_state() == minesweeper::g_states::in_progress || m_game.get_game_state() == minesweeper::g_states::new_game))
 		update_head("ok_head");
 }
 
