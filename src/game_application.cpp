@@ -48,7 +48,7 @@ void game_application::on_new_game_settings(int height, int width, int mines, in
 
 void game_application::on_menu_game_settings() {
 	delete s_window;
-	s_window = new settings_window(g_window->get_height(), g_window->get_width(), g_window->game_mines, g_window->selection);
+	s_window = new settings_window(g_window->game_height, g_window->game_width, g_window->game_mines, g_window->selection);
 	add_window(*s_window);
 	s_window->signal_update_game().connect(sigc::mem_fun(*this, &game_application::on_new_game_settings));
 	s_window->show();

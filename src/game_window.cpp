@@ -71,7 +71,7 @@ void game_window::initialize_window() {
 	/*
 	There are three types of mouse events to be processed for mines_da: single left click, single right click,
 	(left and right) click.
-	
+
 	-signal_begin fires when a button is pressed.
 	-signal_update fires when the mouse moves while the signal for the button is still active
 	-signal_end fires when the signal for the button is inactivated
@@ -84,7 +84,7 @@ void game_window::initialize_window() {
 
 	Eventhandlers below use a combination of the states of the signals (active, inactive, released, not released) to determine
 	how many buttons are currently depressed and which input to process.
-	
+
 	*/
 	lm_click->signal_begin().connect(sigc::bind(sigc::mem_fun(*this, &game_window::on_mines_da_click_begin), 1));
 	rm_click->signal_begin().connect(sigc::bind(sigc::mem_fun(*this, &game_window::on_mines_da_click_begin), 3));
@@ -471,7 +471,7 @@ void game_window::on_mines_da_click_end(Gdk::EventSequence* es, int button_num) 
 		for (int x = 0; x < m_game.get_cols(); x++) {
 			for (int y = 0; y < m_game.get_rows(); y++) {
 				int tile_type = m_game.get_tile_type(x, y);
-				if (tile_type >= 0)
+				if (tile_type >= 0 && m_game.get_tile_state(x, y) != minesweeper::states::flagged)
 					continue;
 
 				if (tile_type == -2) {
@@ -479,7 +479,7 @@ void game_window::on_mines_da_click_end(Gdk::EventSequence* es, int button_num) 
 				}
 				else {
 					if (m_game.get_tile_state(x, y) == minesweeper::states::flagged) {
-						if (m_game.get_tile_type(x, y) == -1)
+						if (tile_type == -1)
 							Gdk::Cairo::set_source_pixbuf(cr, g_icons["flagged"], 32 * x, 32 * y);
 						else
 							Gdk::Cairo::set_source_pixbuf(cr, g_icons["incorrect"], 32 * x, 32 * y);
@@ -512,6 +512,9 @@ void game_window::on_mines_da_click_unpaired_release(double, double, guint butto
 	case(1): lclick_released = true; break;
 	case(3): rclick_released = true; break;
 	}
+
+	if (lclick_released && rclick_released)
+		update_head("ok_head");
 }
 
 void game_window::on_mines_motion(double x, double y) {
@@ -555,7 +558,7 @@ bool game_window::on_mines_da_key_pressed(guint keyval, guint, Gdk::ModifierType
 			for (int x = 0; x < m_game.get_cols(); x++) {
 				for (int y = 0; y < m_game.get_rows(); y++) {
 					int tile_type = m_game.get_tile_type(x, y);
-					if (tile_type >= 0)
+					if (tile_type >= 0 && m_game.get_tile_state(x, y) != minesweeper::states::flagged)
 						continue;
 
 					if (tile_type == -2) {
@@ -563,7 +566,7 @@ bool game_window::on_mines_da_key_pressed(guint keyval, guint, Gdk::ModifierType
 					}
 					else {
 						if (m_game.get_tile_state(x, y) == minesweeper::states::flagged) {
-							if (m_game.get_tile_type(x, y) == -1)
+							if (tile_type == -1)
 								Gdk::Cairo::set_source_pixbuf(cr, g_icons["flagged"], 32 * x, 32 * y);
 							else
 								Gdk::Cairo::set_source_pixbuf(cr, g_icons["incorrect"], 32 * x, 32 * y);
@@ -755,7 +758,7 @@ void settings_window::initialize_settings() {
 	for (int i = 1; i < 4; i++) {
 		rad_buttons[i].set_group(rad_buttons[0]);
 	}
-	rad_buttons[2].set_active();
+	rad_buttons[selection].set_active();
 
 	description_labels[0][0].set_text("Height");
 	description_labels[0][1].set_text("Width");
@@ -789,6 +792,11 @@ void settings_window::initialize_settings() {
 		custom_num_entries[i].set_max_width_chars(3);
 		custom_num_entries[i].signal_changed().connect(sigc::bind(sigc::mem_fun(*this, &settings_window::on_text_entry_input), i));
 		top_grid.attach(custom_num_entries[i], i + 2, 4);
+	}
+	if (selection == 3) {
+		custom_num_entries[0].set_text(std::to_string(game_height));
+		custom_num_entries[1].set_text(std::to_string(game_width));
+		custom_num_entries[2].set_text(std::to_string(game_mines));
 	}
 
 	bottom_grid.attach(apply_button, 0, 0);
