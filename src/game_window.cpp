@@ -427,7 +427,7 @@ void game_window::on_mines_da_click_end(Gdk::EventSequence* es, int button_num) 
 		else { // single cell reveal
 			if (pix_x >= mines_da.get_width() || pix_y >= mines_da.get_height() || pix_x < 0 || pix_y < 0)
 				return;
-			if (m_game.get_game_state() == minesweeper::g_states::new_game)
+			if (m_game.get_game_state() == minesweeper::g_states::new_game && m_game.get_tile_state(grid_x, grid_y) == minesweeper::states::covered)
 				timer_connection = Glib::signal_timeout().connect_seconds(sigc::mem_fun(*this, &game_window::timer_handler), 1);
 			auto cells = m_game.l_click_clear(grid_x, grid_y);
 			redraw_cells(cells, game_window::draw_selection::reveal);
