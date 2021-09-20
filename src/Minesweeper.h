@@ -111,7 +111,7 @@ namespace minesweeper {
 
 		/// <summary>
 		/// Helper function to left-click and right-click actions. Does
-		/// BFS search to uncover all eligible tiles.
+		/// DFS search to uncover all eligible tiles.
 		/// </summary>
 		/// <param name="u_tiles">Vector of coordinate pairs passed in by reference.
 		/// It will append to the vector any new tiles that change states as a result
