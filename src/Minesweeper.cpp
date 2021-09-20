@@ -34,13 +34,13 @@ void MSGame::initialize_game(int initial_x, int initial_y) {
 
 	fy_shuffle(arr, mines);
 
-	for (int i = 0; i < (rows * columns) && initial_tiles > 0 && new_mines < mines; i++) {
+	for (int i = 0; i < (rows * columns) && new_mines < mines; i++) {
 		int x = arr[i] % columns;
 		int y = arr[i] / columns;
 
 		if (initial_x == x && initial_y == y)
 			continue;
-		else if (std::abs(initial_x - x) <= 1 && std::abs(initial_y - y) <= 1) {
+		else if (std::abs(initial_x - x) <= 1 && std::abs(initial_y - y) <= 1 && initial_tiles > 0) {
 			initial_tiles--;
 			continue;
 		}
