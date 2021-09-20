@@ -158,13 +158,13 @@ std::vector<std::pair<int, int>> MSGame::d_click_clear(int x, int y) {
 // Apply left click operation
 std::vector<std::pair<int, int>> MSGame::l_click_clear(int x, int y) {
 
+	if (get_tile_state(x, y) != states::covered)
+		return {};
+
 	if (current_state == g_states::new_game) {
 		initialize_game(x, y);
 		current_state = g_states::in_progress;
 	}
-
-	if (get_tile_state(x, y) != states::covered)
-		return {};
 
 	if (get_tile_type(x, y) == -1) {
 		game_tiles[y * columns + x].tile_type = -2;
