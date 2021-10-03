@@ -31,12 +31,6 @@
 #include <gtkmm/builder.h>
 #include <gtkmm/application.h>
 
-
-
-#include <gtk/gtk.h>
-#include <gtkmm/windowgroup.h>
-#include <gtkmm/messagedialog.h>
-
 // Helper arrays for octile distances
 inline const int dx8[8]{ -1, -1, -1, 0, 0, 1, 1, 1 };
 inline const int dy8[8]{ -1, 0, 1, -1, 1, -1, 0, 1 };
