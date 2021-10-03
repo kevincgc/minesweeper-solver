@@ -18,6 +18,7 @@ void tile::flip_flag() {
 
 // Initialize a game. Occurs when game state goes from new_game to in_progress
 void MSGame::initialize_game(int initial_x, int initial_y) {
+	initialized = true;
 	remaining_uncleared = rows * columns - mines;
 	int new_mines = 0;
 
@@ -58,7 +59,80 @@ void MSGame::initialize_game(int initial_x, int initial_y) {
 		int y = arr[i] / columns;
 		game_tiles[arr[i]].tile_type = check_adjacent_mines(x, y);
 	}
+}
 
+// Initialize a game using a game code
+void MSGame::initialize_game(std::string game_code) {
+	initialized = true;
+
+	int i = 0;
+	while (true) {
+		if (game_code[i] == ';')
+			break;
+		i++;
+	}
+	i++;
+	while (true) {
+		if (game_code[i] == ';')
+			break;
+		i++;
+	}
+	i++;
+
+	std::string substr = game_code.substr(i);
+	int total_tiles = rows * columns;
+	int curr_tile_ind = 0;
+	int total_mines = 0;
+
+	for (int i = 0; i < substr.size(); i++) {
+		if (curr_tile_ind >= total_tiles)
+			break;
+
+		int curr_num = 0;
+		switch (substr[i]) {
+		case '+':
+			curr_num = 63;
+			break;
+		case '=':
+			curr_num = 62;
+			break;
+		default:
+			if (std::isdigit(substr[i]))
+				curr_num = substr[i] - '0';
+			else if (substr[i] >= 'a' && substr[i] <= 'z')
+				curr_num = substr[i] - 'a' + 10;
+			else
+				curr_num = substr[i] - 'A' + 36;
+			break;
+		}
+
+		int conv = 32;
+		for (int j = 0; j < 6; j++) {
+			if (curr_tile_ind >= total_tiles)
+				break;
+
+			if (curr_num >= conv) {
+				game_tiles[curr_tile_ind].tile_type = -1;
+				curr_num -= conv;
+				total_mines++;
+			}
+			conv >>= 1;
+			curr_tile_ind++;
+		}
+	}
+	// If less code than needed, assume no mines
+
+	for (int i = 0; i < (rows * columns); i++) {
+		if (game_tiles[i].tile_type == -1)
+			continue;
+
+		int x = i % columns;
+		int y = i / columns;
+		game_tiles[i].tile_type = check_adjacent_mines(x, y);
+	}
+
+	mines = total_mines;
+	remaining_mines = mines;
 	remaining_uncleared = rows * columns - mines;
 }
 
@@ -103,6 +177,7 @@ void MSGame::reset() {
 	game_tiles.resize(rows * columns);
 	remaining_mines = mines;
 	current_state = g_states::new_game;
+	initialized = false;
 }
 
 void MSGame::reset(int r, int c, int m) { // TODO: range checking on r, c and m
@@ -162,7 +237,8 @@ std::vector<std::pair<int, int>> MSGame::l_click_clear(int x, int y) {
 		return {};
 
 	if (current_state == g_states::new_game) {
-		initialize_game(x, y);
+		if(!initialized)
+			initialize_game(x, y);
 		current_state = g_states::in_progress;
 	}
 
@@ -208,4 +284,146 @@ void MSGame::reveal_adj(std::vector<std::pair<int, int>>& u_tiles, int x, int y)
 	}
 
 	return;
+}
+
+//Get game code
+std::string MSGame::get_game_code() {
+	if (current_state == g_states::new_game)
+		return {};
+
+	std::vector<int> raw_code;
+	for (auto& a : game_tiles) {
+		if (a.get_type() == -1)
+			raw_code.push_back(1);
+		else
+			raw_code.push_back(0);
+	}
+
+	std::string result = std::to_string(get_rows()) + ';' + std::to_string(get_cols()) + ';';
+
+	for (int i = 0; i < raw_code.size(); i = i + 6) {
+		int agg_num = 0;
+		for (int j = 0; j < 6; j++) {
+			agg_num <<= 1;
+			if (i + j < raw_code.size() && raw_code[i + j] == 1)
+				agg_num += 1;
+		}
+
+
+		// 0-9: 0-9
+		// a-z: 10-35
+		// A-Z: 36-61
+		// = : 62
+		// + : 63
+
+		if (agg_num < 10)
+			result += std::to_string(agg_num);
+		else if (agg_num < 36)
+			result += ('a' + (agg_num - 10));
+		else if (agg_num < 62)
+			result += ('A' + (agg_num - 36));
+		else if (agg_num == 63)
+			result += '=';
+		else
+			result += '+';
+	}
+
+	return result;
+}
+
+bool minesweeper::check_code(std::string game_code, int& r, int& c, int& m) {
+	if (game_code.size() == 0)
+		return false;
+
+	std::string substr = "";
+	int i = 0;
+	while (true) {
+		if (i == game_code.size())
+			return false;
+
+		if (game_code[i] == ';')
+			break;
+
+		if (!std::isdigit(game_code[i]))
+			return false;
+		substr += game_code[i];
+		i++;
+	}
+	if (substr.size() > 2 || substr.size()==0)
+		return false;
+	r = std::stoi(substr);
+	if(r>99 || r<1)
+		return false;
+	i++;
+
+	substr = "";
+	while (true) {
+		if (i == game_code.size())
+			return false;
+
+		if (game_code[i] == ';')
+			break;
+
+		if (!std::isdigit(game_code[i]))
+			return false;
+		substr += game_code[i];
+		i++;
+	}
+	if (substr.size() > 2 || substr.size() == 0)
+		return false;
+	c = std::stoi(substr);
+	if (c > 99 || c < 8)
+		return false;
+	i++;
+
+	if (i == game_code.size())
+		return false;
+
+	substr = "";
+	while (i < game_code.size()) {
+		if (!std::isalnum(game_code[i]) && game_code[i] != '+' && game_code[i] != '=')
+			return false;
+
+		substr += game_code[i];
+		i++;
+	}
+
+	int curr_tile_ind = 0;
+	int total_tiles = r * c;
+	for (int i = 0; i < substr.size(); i++) {
+		if (curr_tile_ind >= total_tiles)
+			break;
+
+		int curr_num = 0;
+		switch (substr[i]) {
+		case '+':
+			curr_num = 63;
+			break;
+		case '=':
+			curr_num = 62;
+			break;
+		default:
+			if (std::isdigit(substr[i]))
+				curr_num = substr[i] - '0';
+			else if (substr[i] >= 'a' && substr[i] <= 'z')
+				curr_num = substr[i] - 'a';
+			else
+				curr_num = substr[i] - 'A';
+			break;
+		}
+
+		int conv = 32;
+		for (int j = 0; j < 6; j++) {
+			if (curr_tile_ind >= total_tiles)
+				break;
+
+			if (curr_num >= conv) {
+				m++;
+			}
+			conv >>= 1;
+			curr_tile_ind++;
+		}
+	}
+
+	return true;
 }

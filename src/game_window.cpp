@@ -38,7 +38,6 @@ void game_window::initialize_window() {
 	main_da.set_draw_func(sigc::mem_fun(*this, &game_window::on_main_da_draw));
 	mines_da.set_draw_func(sigc::mem_fun(*this, &game_window::on_mines_da_draw));
 
-
 	//Connect Signals
 	//--drag for main drawingarea - only applies to the reset button
 	main_drag = Gtk::GestureDrag::create();
@@ -248,6 +247,24 @@ void game_window::on_main_da_drag_end(double x_offset, double y_offset) {
 		if (x_offset + start_x >= (main_da.get_width() - 52) / 2 && x_offset + start_x <= (main_da.get_width() + 52) / 2
 			&& y_offset + start_y >= 26 && y_offset + start_y <= 77) {
 
+			if ((code_window_ptr && code_window_ptr->code_button_active()) || (!code_window_ptr && game_code != "")) {
+				if (code_window_ptr && code_window_ptr->code_button_active())
+					game_code = code_window_ptr->get_code();
+
+				int new_r=0, new_c=0, new_m=0;
+				if (minesweeper::check_code(game_code, new_r, new_c, new_m)) {
+					if (!(new_r == game_height && new_c == game_width)) {
+						code_resize_sig.emit(new_r, new_c, new_m, game_code);
+						return;
+					}
+				}
+				else {
+					game_code = "invalid code";
+					if (code_window_ptr)
+						code_window_ptr->set_code("invalid code");
+				}
+			}
+
 			m_game.reset();
 			timer_connection.disconnect();
 			sec_count = 0;
@@ -427,10 +444,46 @@ void game_window::on_mines_da_click_end(Gdk::EventSequence* es, int button_num) 
 		else { // single cell reveal
 			if (pix_x >= mines_da.get_width() || pix_y >= mines_da.get_height() || pix_x < 0 || pix_y < 0)
 				return;
-			if (m_game.get_game_state() == minesweeper::g_states::new_game && m_game.get_tile_state(grid_x, grid_y) == minesweeper::states::covered)
+
+			if (m_game.get_game_state() == minesweeper::g_states::new_game && m_game.get_tile_state(grid_x, grid_y) == minesweeper::states::covered) {
 				timer_connection = Glib::signal_timeout().connect_seconds(sigc::mem_fun(*this, &game_window::timer_handler), 1);
-			auto cells = m_game.l_click_clear(grid_x, grid_y);
-			redraw_cells(cells, game_window::draw_selection::reveal);
+
+				if ((code_window_ptr && code_window_ptr->code_button_active()) || (!code_window_ptr && game_code != "")) {
+					if (code_window_ptr && code_window_ptr->code_button_active())
+						game_code = code_window_ptr->get_code();
+					
+					int new_r=0, new_c=0, new_m=0;
+					if (minesweeper::check_code(game_code, new_r, new_c, new_m)) {
+						if (new_r == game_height && new_c == game_width) {
+							m_game.initialize_game(game_code);
+							selection = 3;
+							auto cells = m_game.l_click_clear(grid_x, grid_y);
+							redraw_cells(cells, game_window::draw_selection::reveal);
+						}
+						else {
+							code_resize_sig.emit(new_r, new_c, new_m, game_code);
+							return;
+						}
+					}
+					else {
+						auto cells = m_game.l_click_clear(grid_x, grid_y);
+						redraw_cells(cells, game_window::draw_selection::reveal);
+						game_code = "invalid code";
+						if (code_window_ptr)
+							code_window_ptr->set_code("invalid code");
+					}
+				}
+				else {
+					auto cells = m_game.l_click_clear(grid_x, grid_y);
+					redraw_cells(cells, game_window::draw_selection::reveal);
+					if(code_window_ptr)
+						code_window_ptr->set_code(m_game.get_game_code());
+				}
+			}
+			else {
+				auto cells = m_game.l_click_clear(grid_x, grid_y);
+				redraw_cells(cells, game_window::draw_selection::reveal);
+			}
 		}
 	}
 	else if (button_num == 3) {
@@ -709,6 +762,10 @@ void game_window::update_head(std::string h_string) {
 	main_da.queue_draw();
 }
 
+game_window::code_resize_signal game_window::signal_code_resize() {
+	return code_resize_sig;
+}
+
 void draw_line(const Cairo::RefPtr<Cairo::Context>& cr, int x, int y, int dx, int dy, int line_width, double r, double g, double b) {
 	cr->set_line_width(line_width);
 	cr->set_source_rgb(r, g, b);
@@ -862,10 +919,69 @@ void settings_window::on_click_apply_button() {
 		selection = 3;
 		break;
 	}
-	hide();
 	settings_signal.emit(game_height, game_width, game_mines, selection);
 }
 
 settings_window::update_game_signal settings_window::signal_update_game() {
 	return settings_signal;
+}
+
+game_about_window::game_about_window() {
+	set_title("About Game");
+	set_child(main_grid);
+	set_resizable(false);
+	ver_label.set_text("Game Version: " + game_ver);
+	ver_label.set_xalign(0.0);
+	about_msg.set_margin_top(10);
+	about_msg.set_text("J. Wang 2021");
+	about_msg.set_xalign(0.0);
+
+	main_grid.set_margin(10);
+	main_grid.attach(ver_label, 0, 0);
+	main_grid.attach(about_msg, 0, 2);
+}
+
+game_code_window::game_code_window() {
+	set_title("Game Code");
+	set_child(main_grid);
+	set_resizable(false);
+
+	game_code_button.set_label("Use Code");
+
+	game_code_text_scroll_window.set_size_request(400, 100);
+	game_code_text_scroll_window.set_child(game_code_text);
+	game_code_text_scroll_window.set_expand(false);
+	game_code_text_scroll_window.set_margin(10);
+	game_code_text.set_wrap_mode(Gtk::WrapMode::CHAR);
+
+	main_grid.set_margin(10);
+	main_grid.attach(game_code_button, 0, 0);
+	main_grid.attach(game_code_text_scroll_window, 0, 1);
+
+}
+
+bool game_code_window::code_button_active() {
+	return game_code_button.get_active();
+}
+
+std::string game_code_window::get_code() {
+	return game_code_text.get_buffer()->get_text();
+}
+
+bool game_window::on_code_window_close() {
+	if (!code_window_ptr)
+		return false;
+	if (code_window_ptr->code_button_active())
+		game_code = code_window_ptr->get_code();
+	else
+		game_code = "";
+	return false;
+}
+
+void game_code_window::set_code(std::string new_code) {
+	game_code_text.get_buffer()->set_text(new_code);
+}
+
+void game_code_window::set_button_active(bool active) {
+	game_code_button.set_active(active);
 }

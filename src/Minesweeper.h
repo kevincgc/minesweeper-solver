@@ -5,10 +5,41 @@
 #include <random>
 #include <vector>
 #include <chrono>
+#include <map>
+
+#include <gtkmm/fixed.h>
+#include <gtkmm/drawingarea.h>
+#include <gtkmm/gestureclick.h>
+#include <gtkmm/gesturedrag.h>
+#include <gtkmm/eventcontrollerkey.h>
+#include <gtkmm/eventcontrollermotion.h>
+#include <gtkmm/applicationwindow.h>
+#include <gtkmm/scrolledwindow.h>
+#include <gtkmm/textview.h>
+#include <gdkmm/pixbuf.h>
+#include <gdkmm/general.h>
+#include <glibmm/main.h>
+#include <gtkmm/grid.h>
+#include <gtkmm/button.h>
+#include <gtkmm/checkbutton.h>
+#include <gtkmm/separator.h>
+#include <gtkmm/box.h>
+#include <gtkmm/entry.h>
+#include <gtkmm/label.h>
+#include <sigc++/trackable.h>
+#include <sigc++/signal.h>
+#include <gtkmm/builder.h>
+#include <gtkmm/application.h>
+
+
+
+#include <gtk/gtk.h>
+#include <gtkmm/windowgroup.h>
+#include <gtkmm/messagedialog.h>
 
 // Helper arrays for octile distances
-const int dx8[8]{ -1, -1, -1, 0, 0, 1, 1, 1 };
-const int dy8[8]{ -1, 0, 1, -1, 1, -1, 0, 1 };
+inline const int dx8[8]{ -1, -1, -1, 0, 0, 1, 1, 1 };
+inline const int dy8[8]{ -1, 0, 1, -1, 1, -1, 0, 1 };
 
 namespace minesweeper {
 
@@ -120,6 +151,8 @@ namespace minesweeper {
 		/// <param name="y">y-position</param>
 		void reveal_adj(std::vector<std::pair<int, int>>& u_tiles, int x, int y);
 
+		void initialize_game(std::string);
+
 		int get_rows() { return rows; };
 		int get_cols() { return columns; };
 		int get_mines() { return mines; };
@@ -128,6 +161,8 @@ namespace minesweeper {
 		states get_tile_state(int x, int y) { return game_tiles[y * columns + x].get_state(); }
 		int get_tile_type(int x, int y) { return game_tiles[y * columns + x].get_type(); }
 
+		std::string get_game_code();
+
 	private:
 		std::vector<tile> game_tiles;
 		int rows = 0;
@@ -135,6 +170,7 @@ namespace minesweeper {
 		int mines = 0;
 		int remaining_mines = 0;
 		int remaining_uncleared = 0;
+		bool initialized = false;
 		g_states current_state = g_states::new_game;
 	};
 
@@ -176,4 +212,6 @@ namespace minesweeper {
 		return;
 
 	}
+
+	bool check_code(std::string, int&, int&, int&);
 }
