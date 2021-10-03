@@ -70,7 +70,8 @@ void game_application::on_new_game_settings(int height, int width, int mines, in
 void game_application::on_code_resize_game_window(int height, int width, int mines, std::string g_code) {
 
 	remove_window(*g_window);
-	g_window->close();
+	if (g_window)
+		delete g_window;
 	g_window = new game_window(height, width, mines, 3);
 	g_window->game_code = g_code;
 	g_window->set_show_menubar();

@@ -408,9 +408,9 @@ bool minesweeper::check_code(std::string game_code, int& r, int& c, int& m) {
 			if (std::isdigit(substr[i]))
 				curr_num = substr[i] - '0';
 			else if (substr[i] >= 'a' && substr[i] <= 'z')
-				curr_num = substr[i] - 'a';
+				curr_num = substr[i] - 'a' + 10;
 			else
-				curr_num = substr[i] - 'A';
+				curr_num = substr[i] - 'A' + 36;
 			break;
 		}
 
@@ -421,6 +421,7 @@ bool minesweeper::check_code(std::string game_code, int& r, int& c, int& m) {
 
 			if (curr_num >= conv) {
 				m++;
+				curr_num -= conv;
 			}
 			conv >>= 1;
 			curr_tile_ind++;
