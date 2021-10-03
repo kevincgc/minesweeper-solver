@@ -18,3 +18,8 @@ If compiling on MS Visual Studio, I recommend using vcpkg to install GTKMM and r
 - **Space bar** while hovering over an unrevealed square to flag/unflag it, or over a number to reveal all adjacent squares
 
 Game settings menu on the top left to configure the game.
+
+
+## Notes
+
+Due to limitations of GTKMM (GTK4), the game cannot fluidly process transition from one window to another window within this application. i.e. while one window is capturing mouse inputs, other windows within this application won't receive any mouse inputs. To move from window to window, use alt+tab or click on the title bar of the active window and then click on the title bar of the desired window.
