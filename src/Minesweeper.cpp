@@ -136,6 +136,7 @@ void MSGame::initialize_game(std::string game_code) {
 	remaining_uncleared = rows * columns - mines;
 }
 
+// Check all adjacent tiles to count number of mines
 int MSGame::check_adjacent_mines(int x, int y) {
 	int entities = 0;
 	int new_x, new_y;
@@ -154,6 +155,7 @@ int MSGame::check_adjacent_mines(int x, int y) {
 	return entities;
 }
 
+// Check all adjacent tiles to count number of flagged tiles
 int MSGame::check_adjacent_flags(int x, int y) {
 	int entities = 0;
 	int new_x, new_y;
@@ -256,7 +258,7 @@ std::vector<std::pair<int, int>> MSGame::l_click_clear(int x, int y) {
 		return { std::pair<int,int>{x, y} };
 	}
 
-	// reveal_adj is BFS helper function
+	// reveal_adj is DFS helper function
 	std::vector<std::pair<int, int>> uncovered_tiles;
 	MSGame::reveal_adj(uncovered_tiles, x, y);
 	remaining_uncleared -= uncovered_tiles.size();
