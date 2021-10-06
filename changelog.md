@@ -1,5 +1,8 @@
 # Changelog
 
+**Ver. 2.1**
+-Minor bug fixes: game codes wrong ('+' and '=' symbols assigned wrong numbers), resetting game while in edit mode works better
+
 **Ver. 2.0**
 -Added game edit mode: allows users to edit the game to add/remove mines and to generate
 a custom game

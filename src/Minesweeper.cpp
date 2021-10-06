@@ -385,7 +385,7 @@ std::string MSGame::get_game_code() {
 			result += ('a' + (agg_num - 10));
 		else if (agg_num < 62)
 			result += ('A' + (agg_num - 36));
-		else if (agg_num == 63)
+		else if (agg_num == 62)
 			result += '=';
 		else
 			result += '+';

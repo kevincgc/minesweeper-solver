@@ -247,6 +247,8 @@ void game_window::on_main_da_drag_end(double x_offset, double y_offset) {
 		if (x_offset + start_x >= (main_da.get_width() - 52) / 2 && x_offset + start_x <= (main_da.get_width() + 52) / 2
 			&& y_offset + start_y >= 26 && y_offset + start_y <= 77) {
 
+			bool use_code = false;
+
 			if ((code_window_ptr && code_window_ptr->code_button_active()) || (!code_window_ptr && game_code != "")) {
 				if (code_window_ptr && code_window_ptr->code_button_active())
 					game_code = code_window_ptr->get_code();
@@ -257,6 +259,7 @@ void game_window::on_main_da_drag_end(double x_offset, double y_offset) {
 						code_resize_sig.emit(new_r, new_c, new_m, game_code);
 						return;
 					}
+					use_code = true;
 				}
 				else {
 					game_code = "invalid code";
@@ -270,7 +273,10 @@ void game_window::on_main_da_drag_end(double x_offset, double y_offset) {
 			sec_count = 0;
 
 			if (m_game.get_game_state() == minesweeper::g_states::edit) {
+				if (use_code)
+					m_game.initialize_game(game_code);
 				reveal_all_for_edit();
+				update_head("ok_head");
 			}
 			else {
 				mines_da_surface = nullptr;
@@ -823,6 +829,9 @@ void game_window::on_edit_mode_toggle() {
 void game_window::on_generate_code_clicked() {
 	if (!code_window_ptr)
 		return;
+
+	if (code_window_ptr->code_button_active())
+		game_code = m_game.get_game_code();
 
 	code_window_ptr->set_code(m_game.get_game_code());
 }
