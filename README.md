@@ -19,6 +19,16 @@ If compiling on MS Visual Studio, I recommend using vcpkg to install GTKMM and r
 
 Game settings menu on the top left to configure the game.
 
+## Game Codes and Edit Mode
+
+This includes "game codes", which is essentially a generated game grid represented in text form. This allows users to replay the same level or to share their level with others.
+
+A game code is automatically generated whenever a new game is started (i.e. when the first cell is revealed and the timer is started). You can also press the "generate code" button to generate a code, which is mainly used when editting the game (see below).
+
+Toggle the "Use Code" button if you wish to use the game code that's currently in the text box. If it is active and the game code is valid, the game will always reset to that game configuration.
+
+**Edit Mode:** An edit mode is available if the user wishes to edit the game directly (i.e. set/unset tiles to be mines). Toggle the edit mode button to enter edit mode.
+Once in edit mode, left click or right click to set/unset mines. Use "generate code" to generate a code for the editted game state.
 
 ## Notes
 

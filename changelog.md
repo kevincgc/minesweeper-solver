@@ -1,5 +1,9 @@
 # Changelog
 
+**Ver. 2.0**
+-Added game edit mode: allows users to edit the game to add/remove mines and to generate
+a custom game
+
 **Ver. 1.1**
 -Minor bug fix: mines not counted correctly when resized from game code
 

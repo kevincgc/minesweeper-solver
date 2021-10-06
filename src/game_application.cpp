@@ -48,19 +48,25 @@ void game_application::on_new_game_settings(int height, int width, int mines, in
 	// Generate new game_window with new settings. Doing this instead of updating existing window
 	// as this seems to be the only way to automatically resize the window
 
+	bool edit_mode_active = g_window->m_game.get_game_state() == minesweeper::g_states::edit;
+
 	remove_window(*g_window);
 	if (g_window)
 		delete g_window;
 	g_window = new game_window(height, width, mines, selection);
 	g_window->set_show_menubar();
 	add_window(*g_window);
+	if (edit_mode_active) {
+		g_window->m_game.toggle_edit_mode(true);
+		g_window->reveal_all_for_edit();
+	}
 	g_window->show();
 	g_window->signal_close_request().connect(sigc::mem_fun(*this, &game_application::on_app_close), false);
 	g_window->signal_code_resize().connect(sigc::mem_fun(*this, &game_application::on_code_resize_game_window));
 
 	if (gc_window) {
 		g_window->code_window_ptr = gc_window;
-		gc_window->set_button_active(false);
+		gc_window->set_code_button_active(false);
 	}
 	if (s_window)
 		s_window->close();
@@ -69,11 +75,17 @@ void game_application::on_new_game_settings(int height, int width, int mines, in
 
 void game_application::on_code_resize_game_window(int height, int width, int mines, std::string g_code) {
 
+	bool edit_mode_active = g_window->m_game.get_game_state() == minesweeper::g_states::edit;
+
 	remove_window(*g_window);
 	if (g_window)
 		delete g_window;
 	g_window = new game_window(height, width, mines, 3);
 	g_window->game_code = g_code;
+	if (edit_mode_active) {
+		g_window->m_game.toggle_edit_mode(true);
+		g_window->reveal_all_for_edit();
+	}
 	g_window->set_show_menubar();
 	add_window(*g_window);
 	g_window->show();
@@ -103,12 +115,18 @@ void game_application::on_menu_game_code() {
 	gc_window->signal_close_request().connect(sigc::bind(sigc::mem_fun(*this, &game_application::on_signal_close_request), "gc_window"), false);
 	if (g_window->game_code != "") {
 		gc_window->set_code(g_window->game_code);
-		gc_window->set_button_active();
+		gc_window->set_code_button_active();
 	}
 	else {
 		if (g_window->m_game.get_game_state() != minesweeper::g_states::new_game)
 			gc_window->set_code(g_window->m_game.get_game_code());
 	}
+	gc_window->edit_mode_button.signal_toggled().connect(sigc::mem_fun(*g_window, &game_window::on_edit_mode_toggle));
+	gc_window->generate_code_button.signal_clicked().connect(sigc::mem_fun(*g_window, &game_window::on_generate_code_clicked));
+
+	if (g_window->m_game.get_game_state() == minesweeper::g_states::edit)
+		gc_window->set_edit_mode_active();
+
 	gc_window->show();
 }
 

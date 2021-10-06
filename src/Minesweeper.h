@@ -40,7 +40,7 @@ namespace minesweeper {
 	/// Display states for game_tiles
 	enum class states { covered, uncovered, flagged };
 	/// Game states
-	enum class g_states { new_game, in_progress, lost, won };
+	enum class g_states { new_game, in_progress, lost, won, edit, editted };
 
 	/// Tile class for storing each individual cell of the game grid
 	class tile {
@@ -146,6 +146,7 @@ namespace minesweeper {
 		void reveal_adj(std::vector<std::pair<int, int>>& u_tiles, int x, int y);
 
 		void initialize_game(std::string);
+		void toggle_edit_mode(bool active);
 
 		int get_rows() { return rows; };
 		int get_cols() { return columns; };

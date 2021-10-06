@@ -5,6 +5,9 @@ cmake_minimum_required (VERSION 3.8)
 
 project ("Minesweeper")
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED)
+
 # Required tools to process gresources
 find_program(XMLLINT NAMES xmllint REQUIRED)
 find_program(GLIB_COMPILE_RESOURCES NAMES glib-compile-resources REQUIRED)

@@ -22,12 +22,19 @@ public:
 	bool code_button_active();
 	std::string get_code();
 	void set_code(std::string);
-	void set_button_active(bool active = true);
+	void set_code_button_active(bool active = true);
+	bool edit_mode_active();
+	void set_edit_mode_active(bool active = true);
+	friend class game_window;
+	friend class game_application;
 
 protected:
 
 	Gtk::Grid main_grid;
 	Gtk::CheckButton game_code_button;
+	Gtk::CheckButton edit_mode_button;
+	Gtk::Box edit_mode_box;
+	Gtk::Button generate_code_button;
 	Gtk::ScrolledWindow game_code_text_scroll_window;
 	Gtk::TextView game_code_text;
 };
@@ -91,7 +98,6 @@ protected:
 
 };
 
-
 /// <summary>
 /// Game window, which is the main window for this application
 /// </summary>
@@ -144,6 +150,9 @@ protected:
 	// Update code if window gets closed
 	bool on_code_window_close();
 
+	void on_edit_mode_toggle();
+	void on_generate_code_clicked();
+
 	// state variables for mines_da mouse inputs
 	bool lclick_active = false;
 	bool rclick_active = false;
@@ -165,6 +174,7 @@ protected:
 	void update_head(std::string h_string);
 	void update_timer();
 	void redraw_cells(std::vector<std::pair<int, int>>& cells, draw_selection draw_type);
+	void reveal_all_for_edit();
 
 	// Stored ptrs to previously rendered frames - new frames edit old ones
 	Cairo::RefPtr<Cairo::ImageSurface> main_da_surface;

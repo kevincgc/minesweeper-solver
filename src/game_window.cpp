@@ -251,7 +251,7 @@ void game_window::on_main_da_drag_end(double x_offset, double y_offset) {
 				if (code_window_ptr && code_window_ptr->code_button_active())
 					game_code = code_window_ptr->get_code();
 
-				int new_r=0, new_c=0, new_m=0;
+				int new_r = 0, new_c = 0, new_m = 0;
 				if (minesweeper::check_code(game_code, new_r, new_c, new_m)) {
 					if (!(new_r == game_height && new_c == game_width)) {
 						code_resize_sig.emit(new_r, new_c, new_m, game_code);
@@ -268,24 +268,37 @@ void game_window::on_main_da_drag_end(double x_offset, double y_offset) {
 			m_game.reset();
 			timer_connection.disconnect();
 			sec_count = 0;
-			main_da_surface = nullptr;
-			mines_da_surface = nullptr;
 
-			main_da.queue_draw();
-			mines_da.queue_draw();
+			if (m_game.get_game_state() == minesweeper::g_states::edit) {
+				reveal_all_for_edit();
+			}
+			else {
+				mines_da_surface = nullptr;
+				mines_da.queue_draw();
+				main_da_surface = nullptr;
+				main_da.queue_draw();
+			}
 		}
 	}
 }
 
 void game_window::on_mines_da_click_begin(Gdk::EventSequence* es, int button_num) {
-	if (m_game.get_game_state() == minesweeper::g_states::lost || m_game.get_game_state() == minesweeper::g_states::won)
+
+	double pix_x, pix_y;
+	if (button_num == 1)
+		lm_click->get_point(es, pix_x, pix_y);
+	else if (button_num == 3)
+		rm_click->get_point(es, pix_x, pix_y);
+	last_pos.first = pix_x;
+	last_pos.second = pix_y;
+
+	if (m_game.get_game_state() == minesweeper::g_states::lost ||
+		m_game.get_game_state() == minesweeper::g_states::won ||
+		m_game.get_game_state() == minesweeper::g_states::edit ||
+		m_game.get_game_state() == minesweeper::g_states::editted)
 		return;
 
 	if (button_num == 1) {
-		double pix_x, pix_y;
-		lm_click->get_point(es, pix_x, pix_y);
-		last_pos.first = pix_x;
-		last_pos.second = pix_y;
 		int grid_x = pix_x / 32, grid_y = pix_y / 32;
 
 		lclick_active = true;
@@ -313,14 +326,10 @@ void game_window::on_mines_da_click_begin(Gdk::EventSequence* es, int button_num
 			update_head("clicked_head");
 		}
 	}
-	else if (3) {
+	else if (button_num == 3) {
 		if (!rclick_released)
 			return;
 
-		double pix_x, pix_y;
-		rm_click->get_point(es, pix_x, pix_y);
-		last_pos.first = pix_x;
-		last_pos.second = pix_y;
 		int grid_x = pix_x / 32, grid_y = pix_y / 32;
 
 		rclick_active = true;
@@ -351,16 +360,20 @@ void game_window::on_mines_da_click_begin(Gdk::EventSequence* es, int button_num
 
 void game_window::on_mines_da_click_update(Gdk::EventSequence* es, int button_num) {
 
-	if (m_game.get_game_state() == minesweeper::g_states::lost || m_game.get_game_state() == minesweeper::g_states::won)
-		return;
-
-	double pix_x = 0, pix_y = 0;
+	double pix_x, pix_y;
 	if (button_num == 1)
 		lm_click->get_point(es, pix_x, pix_y);
 	else if (button_num == 3)
 		rm_click->get_point(es, pix_x, pix_y);
 	last_pos.first = pix_x;
 	last_pos.second = pix_y;
+
+	if (m_game.get_game_state() == minesweeper::g_states::lost ||
+		m_game.get_game_state() == minesweeper::g_states::won ||
+		m_game.get_game_state() == minesweeper::g_states::edit ||
+		m_game.get_game_state() == minesweeper::g_states::editted)
+		return;
+
 	int grid_x = pix_x / 32, grid_y = pix_y / 32;
 
 	// cover up the previously revealed squares
@@ -413,7 +426,9 @@ void game_window::on_mines_da_click_update(Gdk::EventSequence* es, int button_nu
 
 void game_window::on_mines_da_click_end(Gdk::EventSequence* es, int button_num) {
 
-	if (m_game.get_game_state() == minesweeper::g_states::lost || m_game.get_game_state() == minesweeper::g_states::won)
+	if (m_game.get_game_state() == minesweeper::g_states::lost ||
+		m_game.get_game_state() == minesweeper::g_states::won ||
+		m_game.get_game_state() == minesweeper::g_states::editted)
 		return;
 
 	if (button_num == 1) {
@@ -451,8 +466,8 @@ void game_window::on_mines_da_click_end(Gdk::EventSequence* es, int button_num) 
 				if ((code_window_ptr && code_window_ptr->code_button_active()) || (!code_window_ptr && game_code != "")) {
 					if (code_window_ptr && code_window_ptr->code_button_active())
 						game_code = code_window_ptr->get_code();
-					
-					int new_r=0, new_c=0, new_m=0;
+
+					int new_r = 0, new_c = 0, new_m = 0;
 					if (minesweeper::check_code(game_code, new_r, new_c, new_m)) {
 						if (new_r == game_height && new_c == game_width) {
 							m_game.initialize_game(game_code);
@@ -476,13 +491,15 @@ void game_window::on_mines_da_click_end(Gdk::EventSequence* es, int button_num) 
 				else {
 					auto cells = m_game.l_click_clear(grid_x, grid_y);
 					redraw_cells(cells, game_window::draw_selection::reveal);
-					if(code_window_ptr)
+					if (code_window_ptr)
 						code_window_ptr->set_code(m_game.get_game_code());
 				}
 			}
 			else {
 				auto cells = m_game.l_click_clear(grid_x, grid_y);
 				redraw_cells(cells, game_window::draw_selection::reveal);
+				if (m_game.get_game_state() == minesweeper::g_states::edit)
+					update_mine_count();
 			}
 		}
 	}
@@ -583,7 +600,9 @@ void game_window::on_mines_motion() {	// If no params passed, this was called by
 bool game_window::on_mines_da_key_pressed(guint keyval, guint, Gdk::ModifierType) {
 
 	if (keyval == 32) {
-		if (m_game.get_game_state() != minesweeper::g_states::in_progress && m_game.get_game_state() != minesweeper::g_states::new_game)
+		if (m_game.get_game_state() == minesweeper::g_states::lost ||
+			m_game.get_game_state() == minesweeper::g_states::won ||
+			m_game.get_game_state() == minesweeper::g_states::editted)
 			return false;
 
 		if (mines_mouse_pos.first == -1)
@@ -591,8 +610,15 @@ bool game_window::on_mines_da_key_pressed(guint keyval, guint, Gdk::ModifierType
 		std::vector <std::pair<int, int>> cells;
 
 		int grid_x = mines_mouse_pos.first / 32, grid_y = mines_mouse_pos.second / 32;
+
+		if (m_game.get_game_state() == minesweeper::g_states::edit) {
+			cells = m_game.l_click_clear(grid_x, grid_y);
+			redraw_cells(cells, game_window::draw_selection::reveal);
+			update_mine_count();
+			return false;
+		}
+
 		if (m_game.get_tile_state(grid_x, grid_y) == minesweeper::states::uncovered) {
-			cells.push_back({ grid_x, grid_y });
 			cells = m_game.d_click_clear(grid_x, grid_y);
 			redraw_cells(cells, game_window::draw_selection::reveal);
 		}
@@ -685,7 +711,11 @@ void game_window::redraw_cells(std::vector<std::pair<int, int>>& cells, game_win
 		for (auto& cell : cells) {
 			int num = m_game.get_tile_type(cell.first, cell.second);
 
-			Gdk::Cairo::set_source_pixbuf(cr, g_icons["m_" + std::to_string(num)], cell.first * 32, cell.second * 32);
+			if (num < 0)
+				Gdk::Cairo::set_source_pixbuf(cr, g_icons["mine"], cell.first * 32, cell.second * 32);
+			else
+				Gdk::Cairo::set_source_pixbuf(cr, g_icons["m_" + std::to_string(num)], cell.first * 32, cell.second * 32);
+
 			cr->paint();
 		}
 	}
@@ -760,6 +790,59 @@ void game_window::update_head(std::string h_string) {
 	cr->paint();
 
 	main_da.queue_draw();
+}
+
+bool game_window::on_code_window_close() {
+	if (!code_window_ptr)
+		return false;
+	if (code_window_ptr->code_button_active())
+		game_code = code_window_ptr->get_code();
+	else
+		game_code = "";
+	return false;
+}
+
+void game_window::on_edit_mode_toggle() {
+	if (!code_window_ptr)
+		return;
+
+	auto curr_state = m_game.get_game_state();
+
+	m_game.toggle_edit_mode(code_window_ptr->edit_mode_active());
+	if (code_window_ptr->edit_mode_active()) {
+		timer_connection.disconnect();
+
+		// If game is new_game state prior to setting to edit reset the game so that mine count is set to 0.
+		if (curr_state == minesweeper::g_states::new_game)
+			m_game.reset();
+
+		reveal_all_for_edit();
+	}
+}
+
+void game_window::on_generate_code_clicked() {
+	if (!code_window_ptr)
+		return;
+
+	code_window_ptr->set_code(m_game.get_game_code());
+}
+
+void game_window::reveal_all_for_edit() {
+	auto cr = Cairo::Context::create(mines_da_surface);
+
+	for (int x = 0; x < m_game.get_cols(); x++) {
+		for (int y = 0; y < m_game.get_rows(); y++) {
+			int tile_type = m_game.get_tile_type(x, y);
+			if (tile_type < 0)
+				Gdk::Cairo::set_source_pixbuf(cr, g_icons["mine"], 32 * x, 32 * y);
+			else {
+				Gdk::Cairo::set_source_pixbuf(cr, g_icons["m_" + std::to_string(tile_type)], 32 * x, 32 * y);
+			}
+			cr->paint();
+		}
+	}
+	mines_da.queue_draw();
+	update_mine_count();
 }
 
 game_window::code_resize_signal game_window::signal_code_resize() {
@@ -954,10 +1037,15 @@ game_code_window::game_code_window() {
 	game_code_text_scroll_window.set_margin(10);
 	game_code_text.set_wrap_mode(Gtk::WrapMode::CHAR);
 
+	edit_mode_button.set_label("Edit mode");
+	generate_code_button.set_label("Generate Code");
+	edit_mode_box.append(edit_mode_button);
+	edit_mode_box.append(generate_code_button);
+
 	main_grid.set_margin(10);
 	main_grid.attach(game_code_button, 0, 0);
 	main_grid.attach(game_code_text_scroll_window, 0, 1);
-
+	main_grid.attach(edit_mode_box, 0, 2);
 }
 
 bool game_code_window::code_button_active() {
@@ -968,20 +1056,19 @@ std::string game_code_window::get_code() {
 	return game_code_text.get_buffer()->get_text();
 }
 
-bool game_window::on_code_window_close() {
-	if (!code_window_ptr)
-		return false;
-	if (code_window_ptr->code_button_active())
-		game_code = code_window_ptr->get_code();
-	else
-		game_code = "";
-	return false;
-}
-
 void game_code_window::set_code(std::string new_code) {
 	game_code_text.get_buffer()->set_text(new_code);
 }
 
-void game_code_window::set_button_active(bool active) {
+void game_code_window::set_code_button_active(bool active) {
 	game_code_button.set_active(active);
+}
+
+bool game_code_window::edit_mode_active() {
+	return edit_mode_button.get_active();
+}
+
+void game_code_window::set_edit_mode_active(bool active) {
+	if (edit_mode_button.get_active() != active)
+		edit_mode_button.set_active(active);
 }

@@ -136,6 +136,22 @@ void MSGame::initialize_game(std::string game_code) {
 	remaining_uncleared = rows * columns - mines;
 }
 
+void MSGame::toggle_edit_mode(bool active) {
+	if (active && current_state == g_states::edit)
+		return;
+	if (!active && current_state != g_states::edit)
+		return;
+
+	if (active) {
+		if(current_state != g_states::editted)
+			remaining_mines = mines;
+		current_state = g_states::edit;
+	}
+	else {
+		current_state = g_states::editted;
+	}
+}
+
 // Check all adjacent tiles to count number of mines
 int MSGame::check_adjacent_mines(int x, int y) {
 	int entities = 0;
@@ -177,8 +193,12 @@ int MSGame::check_adjacent_flags(int x, int y) {
 void MSGame::reset() {
 	game_tiles.clear();
 	game_tiles.resize(rows * columns);
-	remaining_mines = mines;
-	current_state = g_states::new_game;
+	if (current_state != g_states::edit) {
+		current_state = g_states::new_game;
+		remaining_mines = mines;
+	}
+	else
+		remaining_mines = 0;
 	initialized = false;
 }
 
@@ -210,6 +230,9 @@ int MSGame::set_flag(int x, int y) {
 
 // Apply double mouse click operation
 std::vector<std::pair<int, int>> MSGame::d_click_clear(int x, int y) {
+	if (current_state == g_states::edit)	// do nothing if edit mode
+		return {};
+
 	if (get_tile_state(x, y) != states::uncovered)
 		return {};
 
@@ -234,6 +257,44 @@ std::vector<std::pair<int, int>> MSGame::d_click_clear(int x, int y) {
 
 // Apply left click operation
 std::vector<std::pair<int, int>> MSGame::l_click_clear(int x, int y) {
+
+	if (current_state == g_states::edit) {	// if edit mode
+		std::vector<std::pair<int, int>> changed_tiles;
+		changed_tiles.push_back({ x, y });
+		if (game_tiles[y * columns + x].tile_type < 0) { // currently mine, change to not mine
+			remaining_mines--;
+			mines--;
+			game_tiles[y * columns + x].tile_type = check_adjacent_mines(x, y);
+			for (int i = 0; i < 8; i++) {
+				int new_x = x + dx8[i];
+				int new_y = y + dy8[i];
+				if (new_x >= 0 && new_x < columns
+					&& new_y >= 0 && new_y < rows) {
+					if (game_tiles[new_y * columns + new_x].tile_type < 0)
+						continue;
+					game_tiles[new_y * columns + new_x].tile_type = check_adjacent_mines(new_x, new_y);
+					changed_tiles.push_back({ new_x, new_y });
+				}
+			}
+		}
+		else { // not a mine, change to mine
+			remaining_mines++;
+			mines++;
+			game_tiles[y * columns + x].tile_type = -1;
+			for (int i = 0; i < 8; i++) {
+				int new_x = x + dx8[i];
+				int new_y = y + dy8[i];
+				if (new_x >= 0 && new_x < columns
+					&& new_y >= 0 && new_y < rows) {
+					if (game_tiles[new_y * columns + new_x].tile_type < 0)
+						continue;
+					game_tiles[new_y * columns + new_x].tile_type = check_adjacent_mines(new_x, new_y);
+					changed_tiles.push_back({ new_x, new_y });
+				}
+			}
+		}
+		return changed_tiles;
+	}
 
 	if (get_tile_state(x, y) != states::covered)
 		return {};
