@@ -56,17 +56,21 @@ void game_application::on_new_game_settings(int height, int width, int mines, in
 	g_window = new game_window(height, width, mines, selection);
 	g_window->set_show_menubar();
 	add_window(*g_window);
+	g_window->show();
 	if (edit_mode_active) {
 		g_window->m_game.toggle_edit_mode(true);
 		g_window->reveal_all_for_edit();
 	}
-	g_window->show();
 	g_window->signal_close_request().connect(sigc::mem_fun(*this, &game_application::on_app_close), false);
 	g_window->signal_code_resize().connect(sigc::mem_fun(*this, &game_application::on_code_resize_game_window));
 
 	if (gc_window) {
 		g_window->code_window_ptr = gc_window;
 		gc_window->set_code_button_active(false);
+		gc_window->generate_code_button_signal.disconnect();
+		gc_window->edit_mode_button_signal.disconnect();
+		gc_window->generate_code_button_signal = gc_window->edit_mode_button.signal_toggled().connect(sigc::mem_fun(*g_window, &game_window::on_edit_mode_toggle));
+		gc_window->edit_mode_button_signal = gc_window->generate_code_button.signal_clicked().connect(sigc::mem_fun(*g_window, &game_window::on_generate_code_clicked));
 	}
 	if (s_window)
 		s_window->close();
@@ -92,8 +96,13 @@ void game_application::on_code_resize_game_window(int height, int width, int min
 	g_window->signal_close_request().connect(sigc::mem_fun(*this, &game_application::on_app_close), false);
 	g_window->signal_code_resize().connect(sigc::mem_fun(*this, &game_application::on_code_resize_game_window));
 
-	if (gc_window)
+	if (gc_window) {
 		g_window->code_window_ptr = gc_window;
+		gc_window->generate_code_button_signal.disconnect();
+		gc_window->edit_mode_button_signal.disconnect();
+		gc_window->generate_code_button_signal = gc_window->edit_mode_button.signal_toggled().connect(sigc::mem_fun(*g_window, &game_window::on_edit_mode_toggle));
+		gc_window->edit_mode_button_signal = gc_window->generate_code_button.signal_clicked().connect(sigc::mem_fun(*g_window, &game_window::on_generate_code_clicked));
+	}
 }
 
 void game_application::on_menu_game_settings() {
@@ -121,8 +130,8 @@ void game_application::on_menu_game_code() {
 		if (g_window->m_game.get_game_state() != minesweeper::g_states::new_game)
 			gc_window->set_code(g_window->m_game.get_game_code());
 	}
-	gc_window->edit_mode_button.signal_toggled().connect(sigc::mem_fun(*g_window, &game_window::on_edit_mode_toggle));
-	gc_window->generate_code_button.signal_clicked().connect(sigc::mem_fun(*g_window, &game_window::on_generate_code_clicked));
+	gc_window->generate_code_button_signal = gc_window->edit_mode_button.signal_toggled().connect(sigc::mem_fun(*g_window, &game_window::on_edit_mode_toggle));
+	gc_window->edit_mode_button_signal = gc_window->generate_code_button.signal_clicked().connect(sigc::mem_fun(*g_window, &game_window::on_generate_code_clicked));
 
 	if (g_window->m_game.get_game_state() == minesweeper::g_states::edit)
 		gc_window->set_edit_mode_active();

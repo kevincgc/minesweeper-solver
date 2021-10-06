@@ -17,7 +17,6 @@ const double light_gray = 189.0 / 255.0;
 class game_code_window : public Gtk::Window {
 
 public:
-
 	game_code_window();
 	bool code_button_active();
 	std::string get_code();
@@ -37,6 +36,10 @@ protected:
 	Gtk::Button generate_code_button;
 	Gtk::ScrolledWindow game_code_text_scroll_window;
 	Gtk::TextView game_code_text;
+
+	sigc::connection generate_code_button_signal;
+	sigc::connection edit_mode_button_signal;
+
 };
 
 /// <summary>

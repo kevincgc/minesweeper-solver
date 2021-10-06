@@ -1,5 +1,8 @@
 # Changelog
 
+**Ver. 2.2**
+-Bug fixes: crash when applying new game settings while code menu open and edit mode on, code menu not working if new settings applied
+
 **Ver. 2.1**
 -Minor bug fixes: game codes wrong ('+' and '=' symbols assigned wrong numbers), resetting game while in edit mode works better
 

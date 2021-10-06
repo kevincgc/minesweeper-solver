@@ -171,6 +171,8 @@ void game_window::on_main_da_draw(const Cairo::RefPtr<Cairo::Context>& cr, int w
 		update_mine_count();
 	}
 
+	if (!cr)
+		return;
 	cr->set_source(main_da_surface, 0, 0);
 	cr->paint();
 }
@@ -189,6 +191,8 @@ void game_window::on_mines_da_draw(const Cairo::RefPtr<Cairo::Context>& cr, int 
 		}
 	}
 
+	if (!cr)
+		return;
 	cr->set_source(mines_da_surface, 0, 0);
 	cr->paint();
 }
@@ -837,6 +841,10 @@ void game_window::on_generate_code_clicked() {
 }
 
 void game_window::reveal_all_for_edit() {
+	if (!mines_da_surface)
+		on_mines_da_draw(nullptr, mines_da.get_content_width(), mines_da.get_content_height());
+	if (!main_da_surface)
+		on_main_da_draw(nullptr, main_da.get_content_width(), main_da.get_content_height());
 	auto cr = Cairo::Context::create(mines_da_surface);
 
 	for (int x = 0; x < m_game.get_cols(); x++) {
