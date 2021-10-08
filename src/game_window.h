@@ -24,21 +24,25 @@ public:
 	void set_code_button_active(bool active = true);
 	bool edit_mode_active();
 	void set_edit_mode_active(bool active = true);
+
 	friend class game_window;
 	friend class game_application;
 
 protected:
 
+	void on_button_copy();
+	void on_button_paste();
+	void on_clipboard_text_received(Glib::RefPtr<Gio::AsyncResult>& result);
+
+	Gtk::Image abc;
 	Gtk::Grid main_grid;
-	Gtk::CheckButton game_code_button;
-	Gtk::CheckButton edit_mode_button;
+	Gtk::CheckButton game_code_button, edit_mode_button;
 	Gtk::Box edit_mode_box;
-	Gtk::Button generate_code_button;
+	Gtk::Button generate_code_button, copy_code_button, paste_code_button;
 	Gtk::ScrolledWindow game_code_text_scroll_window;
 	Gtk::TextView game_code_text;
 
-	sigc::connection generate_code_button_signal;
-	sigc::connection edit_mode_button_signal;
+	sigc::connection generate_code_button_signal, edit_mode_button_signal;
 
 };
 

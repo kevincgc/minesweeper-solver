@@ -1,5 +1,9 @@
 # Changelog
 
+**Ver. 2.3**
+-Bug fix: mine counter not being reset properly after entering and leaving edit mode
+-Added copy and paste buttons for the code window
+
 **Ver. 2.2**
 -Bug fixes: crash when applying new game settings while code menu open and edit mode on, code menu not working if new settings applied
 

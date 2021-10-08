@@ -1056,8 +1056,15 @@ game_code_window::game_code_window() {
 
 	edit_mode_button.set_label("Edit mode");
 	generate_code_button.set_label("Generate Code");
+	copy_code_button.set_label("Copy Code");
+	copy_code_button.signal_clicked().connect(sigc::mem_fun(*this, &game_code_window::on_button_copy));
+	paste_code_button.set_label("Paste Code");
+	paste_code_button.signal_clicked().connect(sigc::mem_fun(*this, &game_code_window::on_button_paste));
+
 	edit_mode_box.append(edit_mode_button);
 	edit_mode_box.append(generate_code_button);
+	edit_mode_box.append(copy_code_button);
+	edit_mode_box.append(paste_code_button);
 
 	main_grid.set_margin(10);
 	main_grid.attach(game_code_button, 0, 0);
@@ -1088,4 +1095,35 @@ bool game_code_window::edit_mode_active() {
 void game_code_window::set_edit_mode_active(bool active) {
 	if (edit_mode_button.get_active() != active)
 		edit_mode_button.set_active(active);
+}
+
+void game_code_window::on_button_copy() {
+	get_clipboard()->set_text(game_code_text.get_buffer()->get_text());
+}
+
+void game_code_window::on_button_paste() {
+	auto content = get_clipboard()->get_content();
+	if (!content) {
+		get_clipboard()->read_text_async(sigc::mem_fun(*this, &game_code_window::on_clipboard_text_received));
+		return;
+	}
+	auto content_formats = content->ref_formats();
+	auto content_types = content_formats->get_gtypes();
+	if (content_types[0] == 64) {
+		Glib::Value<std::string> text;
+		text.init(64);
+		content->get_value(text);
+		game_code_text.get_buffer()->set_text(text.get());
+	}
+	else if (content_types[0] == gtk_text_buffer_get_type()) {
+		Glib::Value<Glib::RefPtr<Gtk::TextBuffer>> text;
+		text.init(content_types[0]);
+		content->get_value(text);
+		game_code_text.get_buffer()->set_text(text.get()->get_text());
+	}
+}
+
+void game_code_window::on_clipboard_text_received(Glib::RefPtr<Gio::AsyncResult>& result) {
+	Glib::ustring text = get_clipboard()->read_text_finish(result);
+	game_code_text.get_buffer()->set_text(text);
 }

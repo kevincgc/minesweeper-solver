@@ -263,7 +263,6 @@ std::vector<std::pair<int, int>> MSGame::l_click_clear(int x, int y) {
 		changed_tiles.push_back({ x, y });
 		if (game_tiles[y * columns + x].tile_type < 0) { // currently mine, change to not mine
 			remaining_mines--;
-			mines--;
 			game_tiles[y * columns + x].tile_type = check_adjacent_mines(x, y);
 			for (int i = 0; i < 8; i++) {
 				int new_x = x + dx8[i];
@@ -279,7 +278,6 @@ std::vector<std::pair<int, int>> MSGame::l_click_clear(int x, int y) {
 		}
 		else { // not a mine, change to mine
 			remaining_mines++;
-			mines++;
 			game_tiles[y * columns + x].tile_type = -1;
 			for (int i = 0; i < 8; i++) {
 				int new_x = x + dx8[i];
