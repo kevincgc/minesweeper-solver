@@ -72,3 +72,20 @@ set_source_files_properties(
 )
 
 add_dependencies(${PROJECT_NAME} m-resource)
+
+# CPack settings- Call cpack in binary build directory to create installation package
+# Only tested for 7Zip
+set(CPACK_PACKAGE_DIRECTORY "cpack_packages")
+install(TARGETS Minesweeper COMPONENT application DESTINATION .)
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/
+		DESTINATION .
+		COMPONENT DLL
+		FILES_MATCHING PATTERN "*.dll"
+		PATTERN "${CPACK_PACKAGE_DIRECTORY}" EXCLUDE
+		)
+
+set(CPACK_COMPONENTS_ALL application DLL)
+set(CPACK_PACK_NAME "Minesweeper")
+
+include(InstallRequiredSystemLibraries)
+include(CPack)

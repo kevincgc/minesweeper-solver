@@ -1,5 +1,10 @@
 # Changelog
 
+**Ver. 2.4**
+-Added CPack configs to cmake settings, allows for creation of installer by calling
+cpack in console within binary build directory.
+	-*Only tested for 7Zip.
+
 **Ver. 2.3**
 -Bug fix: mine counter not being reset properly after entering and leaving edit mode
 -Added copy and paste buttons for the code window
