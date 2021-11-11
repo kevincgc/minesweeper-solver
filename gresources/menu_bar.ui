@@ -8,6 +8,10 @@
 					<attribute name='label' translatable='yes'>Edit Game Settings</attribute>
 					<attribute name='action'>app.game_settings_edit</attribute>
 				</item>
+        <item>
+          <attribute name='label' translatable='yes'>end me</attribute>
+          <attribute name='action'>app.game_step</attribute>
+        </item>
 			</section>
 		</submenu>
 		<submenu>

@@ -112,6 +112,8 @@ void game_window::initialize_icons() {// Load icons from gresources for use
 	g_icons["clicked_head"] = Gdk::Pixbuf::create_from_resource("/headicons/clicked_head.png");
 	g_icons["won_head"] = Gdk::Pixbuf::create_from_resource("/headicons/won_head.png");
 	g_icons["reset_head"] = Gdk::Pixbuf::create_from_resource("/headicons/reset_head.png");
+	g_icons["awoo_head"] = Gdk::Pixbuf::create_from_resource("/headicons/a.png");
+	g_icons["awoo2_head"] = Gdk::Pixbuf::create_from_resource("/headicons/a2.png");
 
 	for (int i = 0; i < 9; i++) {
 		g_icons[(std::string)("m_" + std::to_string(i))] = Gdk::Pixbuf::create_from_resource("/mines/m_" + std::to_string(i) + ".png");

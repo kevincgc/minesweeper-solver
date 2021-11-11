@@ -17,6 +17,7 @@ void game_application::on_startup() {
 	add_action("game_settings_edit", sigc::mem_fun(*this, &game_application::on_menu_game_settings));
 	add_action("game_code", sigc::mem_fun(*this, &game_application::on_menu_game_code));
 	add_action("game_about", sigc::mem_fun(*this, &game_application::on_menu_game_about));
+	add_action("game_step", sigc::mem_fun(*this, &game_application::on_menu_game_step));
 
 	auto menu_object = g_refBuilder->get_object("main_menubar");
 	auto main_menu_ptr = std::dynamic_pointer_cast<Gio::Menu>(menu_object);
@@ -137,6 +138,79 @@ void game_application::on_menu_game_code() {
 		gc_window->set_edit_mode_active();
 
 	gc_window->show();
+}
+
+using Clock = std::chrono::high_resolution_clock;
+int ctr = 0;
+gboolean stepg(gpointer data) {
+	((game_application*)data)->step();
+	if (ctr == 0)
+		return false;
+	return true;
+}
+
+void game_application::on_menu_game_step() {
+	//auto t = Clock::now();
+	//int reps = 0;
+	//while (reps != 10) {
+	//	auto now = Clock::now();
+	//	float elapsed_ms = (float)(std::chrono::duration_cast<std::chrono::microseconds>(now - t)).count() / 1000;
+	//	if (elapsed_ms > 500) {
+	//		step();
+	//		t = now;
+	//		reps++;
+	//	}
+	//}
+	ctr = 10;
+	g_timeout_add(10, stepg, this);
+	std::vector<std::pair<int, int>> v1 = { {1,1},{2,2},{2,3},{3,3},{5,4} };
+	std::vector<std::pair<int, int>> v2 = { {2,3},{3,3},{2,2}, {3,2} };
+	std::cout << g_window->m_game.is_subset(v1, v2) << std::endl;
+	std::cout << g_window->m_game.is_subset(v2, v1) << std::endl;
+}
+
+void game_application::step() {
+	//g_window->m_game.solver_step();
+	g_window->m_game.calc_p_mat();
+	std::vector<float> p_mat = g_window->m_game.p_mat;
+	std::pair<int,int> m = g_window->m_game.find_mine();
+	if (get<0>(m) != -1) {
+		g_window->m_game.set_flag(std::get<0>(m), std::get<1>(m));
+		std::vector <std::pair<int, int>> cells;
+		cells.push_back(m);
+		g_window->redraw_cells(cells, game_window::draw_selection::flag);
+		std::cout << "mine at: (" << std::get<0>(m) << "," << std::get<1>(m) << ")" << std::endl;
+		return;
+	}
+	std::pair<int, int> d = g_window->m_game.find_d_clear();
+	if (get<0>(d) != -1) {
+		std::vector <std::pair<int, int>> cells;
+		cells = g_window->m_game.d_click_clear(std::get<0>(d), std::get<1>(d));
+		g_window->redraw_cells(cells, game_window::draw_selection::reveal);
+		std::cout << "d_clear at: (" << std::get<0>(d) << "," << std::get<1>(d) << ")" << std::endl;
+		return;
+	}
+	std::pair<int, std::pair<int, int>> overlap = g_window->m_game.find_overlap();
+	if (get<0>(overlap) == 0) {
+		std::vector <std::pair<int, int>> cells;
+		cells = g_window->m_game.l_click_clear(overlap.second.first, overlap.second.second);
+		g_window->redraw_cells(cells, game_window::draw_selection::reveal);
+		std::cout << "overlap_clear at: (" << overlap.second.first << "," << overlap.second.second << ")" << std::endl;
+		return;
+	} else if (get<0>(overlap) == 1) {
+		g_window->m_game.set_flag(overlap.second.first, overlap.second.second);
+		std::vector <std::pair<int, int>> cells;
+		cells.push_back({ overlap.second.first, overlap.second.second });
+		g_window->redraw_cells(cells, game_window::draw_selection::flag);
+		std::cout << "mine at: (" << overlap.second.first << "," << overlap.second.second << ")" << std::endl;
+		return;
+	}
+	std::vector<std::pair<int, int>> min_p_tuples = g_window->m_game.get_min_p_tuples();
+	std::srand(std::time(nullptr));
+	int i = std::rand() % min_p_tuples.size();
+	auto cells = g_window->m_game.l_click_clear(std::get<0>(min_p_tuples[i]), std::get<1>(min_p_tuples[i]));
+	g_window->redraw_cells(cells, game_window::draw_selection::reveal);
+	std::cout << "l_clear at: (" << std::get<0>(min_p_tuples[i]) << "," << std::get<1>(min_p_tuples[i]) << ")" << std::endl;
 }
 
 void game_application::on_menu_game_about() {

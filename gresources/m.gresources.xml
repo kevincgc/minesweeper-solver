@@ -35,6 +35,8 @@
 		<file>won_head.png</file>
 		<file>reset_head.png</file>
 		<file>clicked_head.png</file>
+    <file>a.png</file>
+    <file>a2.png</file>
 	</gresource>
 	<gresource prefix="/ui">
 		<file preprocess="xml-stripblanks">menu_bar.ui</file>

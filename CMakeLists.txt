@@ -13,9 +13,12 @@ find_program(XMLLINT NAMES xmllint REQUIRED)
 find_program(GLIB_COMPILE_RESOURCES NAMES glib-compile-resources REQUIRED)
 
 # Pkgconf setup to link gtkmm libraries
-find_program(PKG_CONFIG_EXECUTABLE pkgconf REQUIRED)
+find_program(PKG_CONFIG_EXECUTABLE pkgconf REQUIRED) 
+#find_program(PKG_CONFIG_EXECUTABLE "C:/vcpkg/installed/x86-windows/tools/pkgconf/pkgconf.exe")
+
 find_package(PkgConfig)
 pkg_check_modules(GTKMM_VARS REQUIRED IMPORTED_TARGET gtkmm-4.0)
+#pkg_check_modules(XMLLINT IMPORTED_TARGET libxml2)
 
 # Compile gresources--
 set(GRESOURCE_C m.gresources.c)

@@ -6,6 +6,7 @@
 #include <vector>
 #include <chrono>
 #include <map>
+#include <set>
 
 #include <gtkmm/fixed.h>
 #include <gtkmm/drawingarea.h>
@@ -40,7 +41,7 @@ namespace minesweeper {
 	/// Display states for game_tiles
 	enum class states { covered, uncovered, flagged };
 	/// Game states
-	enum class g_states { new_game, in_progress, lost, won, edit, editted };
+	enum class g_states { new_game, in_progress, auto_playing, lost, won, edit, editted };
 
 	/// Tile class for storing each individual cell of the game grid
 	class tile {
@@ -84,7 +85,7 @@ namespace minesweeper {
 		/// <summary>
 		/// Default constructor: sets params to "hard" game
 		/// </summary>
-		MSGame() : game_tiles(16*30), rows(16), columns(30), mines(99), remaining_mines(99) {}
+		MSGame() : game_tiles(16*30), p_mat(16 * 30), rows(16), columns(30), mines(99), remaining_mines(99) {}
 
 		/// <summary>
 		/// 
@@ -92,7 +93,7 @@ namespace minesweeper {
 		/// <param name="r"># of rows</param>
 		/// <param name="c"># of columns</param>
 		/// <param name="m"># of mines</param>
-		MSGame(int r, int c, int m) : game_tiles(r*c), rows(r), columns(c), mines(m), remaining_mines(m) {}
+		MSGame(int r, int c, int m) : game_tiles(r*c), p_mat(r * c), rows(r), columns(c), mines(m), remaining_mines(m) {}
 
 		void reset();
 		void reset(int r, int c, int m);
@@ -100,9 +101,25 @@ namespace minesweeper {
 
 		int check_adjacent_mines(int x, int y);
 		int check_adjacent_flags(int x, int y);
+		int check_adjacent_covered(int x, int y);
+		int check_adjacent_uncovered(int x, int y);
+		int check_adjacent_tiles(int x, int y);
 		int set_flag(int x, int y);
 		void inc_remaining() { remaining_mines++; }
 		void dec_remaining() { remaining_mines--; }
+		void calc_p_mat();
+		void clear_p_mat();
+		void set_adjacent_p(int x_center, int y_center);
+		std::vector<std::pair<int, int>> get_min_p_tuples();
+		int get_index_from_xy(int x, int y);
+		void solver_step();
+		std::pair<int, int> find_mine();
+		int count_covered();
+		std::pair<int, int> find_d_clear();
+		std::pair<int, std::pair<int, int>> account_for_overlap(int x_center, int y_center);
+		std::pair<int, std::pair<int, int>> find_overlap();
+		bool is_subset(std::vector<std::pair<int, int>> other, std::vector<std::pair<int, int>> superset);
+
 
 		/// <summary>
 		/// Applies double-click input on tile located at (x,y).
@@ -157,6 +174,7 @@ namespace minesweeper {
 		int get_tile_type(int x, int y) { return game_tiles[y * columns + x].get_type(); }
 
 		std::string get_game_code();
+		std::vector<float> p_mat;
 
 	private:
 		std::vector<tile> game_tiles;
@@ -166,6 +184,7 @@ namespace minesweeper {
 		int remaining_mines = 0;
 		int remaining_uncleared = 0;
 		bool initialized = false;
+		
 		g_states current_state = g_states::new_game;
 	};
 

@@ -190,9 +190,64 @@ int MSGame::check_adjacent_flags(int x, int y) {
 	return entities;
 }
 
+int MSGame::check_adjacent_covered(int x, int y) {
+	int entities = 0;
+	int new_x, new_y;
+
+	for (int i = 0; i < 8; i++) {
+		new_x = x + dx8[i];
+		new_y = y + dy8[i];
+
+		if (new_x < 0 || new_y < 0 || new_x >= columns || new_y >= rows)
+			continue;
+
+		if (get_tile_state(new_x, new_y) == states::covered)
+			++entities;
+	}
+
+	return entities;
+}
+
+int MSGame::check_adjacent_uncovered(int x, int y) {
+	int entities = 0;
+	int new_x, new_y;
+
+	for (int i = 0; i < 8; i++) {
+		new_x = x + dx8[i];
+		new_y = y + dy8[i];
+
+		if (new_x < 0 || new_y < 0 || new_x >= columns || new_y >= rows)
+			continue;
+
+		if (get_tile_state(new_x, new_y) == states::uncovered)
+			++entities;
+	}
+
+	return entities;
+}
+
+int MSGame::check_adjacent_tiles(int x, int y) {
+	int entities = 0;
+	int new_x, new_y;
+
+	for (int i = 0; i < 8; i++) {
+		new_x = x + dx8[i];
+		new_y = y + dy8[i];
+
+		if (new_x < 0 || new_y < 0 || new_x >= columns || new_y >= rows)
+			continue;
+
+		if (get_tile_state(new_x, new_y) == states::uncovered || get_tile_state(new_x, new_y) == states::covered || get_tile_state(new_x, new_y) == states::flagged)
+			++entities;
+	}
+
+	return entities;
+}
+
 void MSGame::reset() {
 	game_tiles.clear();
 	game_tiles.resize(rows * columns);
+	p_mat.resize(rows * columns);
 	if (current_state != g_states::edit) {
 		current_state = g_states::new_game;
 		remaining_mines = mines;
@@ -200,6 +255,11 @@ void MSGame::reset() {
 	else
 		remaining_mines = 0;
 	initialized = false;
+	//if (p_mat != nullptr)
+	//	delete(p_mat);
+	//p_mat = (float**)malloc(columns * sizeof(float*));
+	//for (int i = 0; i < columns; i++)
+	//	p_mat[i] = (float*)malloc(rows * sizeof(float));
 }
 
 void MSGame::reset(int r, int c, int m) { // TODO: range checking on r, c and m
@@ -214,6 +274,9 @@ void MSGame::reset(int r, int c, int m) { // TODO: range checking on r, c and m
 
 // Apply right click operation
 int MSGame::set_flag(int x, int y) {
+	if (get_tile_state(x, y) == states::flagged)
+		return 0;
+
 	if (get_tile_state(x, y) == states::uncovered)
 		return -1;
 
@@ -227,6 +290,237 @@ int MSGame::set_flag(int x, int y) {
 	}
 	return 0;
 }
+
+void minesweeper::MSGame::solver_step()
+{
+	//int covered = count_covered();
+	//calc_p_mat();
+	//for (int x = 0; x < columns; x++) {
+	//	for (int y = 0; y < rows; y++) {
+	//		if (fequals(p_mat[get_index_from_xy(x, y)], 1) && get_tile_state(x, y) != states::flagged) {
+	//			set_flag(x, y);
+	//			return;
+	//		}
+	//	}
+	//}
+	//std::vector<std::pair<int, int>> min_p_tuples = get_min_p_tuples();
+	//std::srand(std::time(nullptr));
+	//int i = std::rand() % min_p_tuples.size();
+	//l_click_clear(std::get<0>(min_p_tuples[i]), std::get<1>(min_p_tuples[i]));
+	return;
+}
+
+int minesweeper::MSGame::get_index_from_xy(int x, int y) {
+	return y * columns + x;
+}
+
+bool fequals(float a, float b)
+{
+	return fabs(a - b) < 1e-5;
+}
+
+std::pair<int, int> minesweeper::MSGame::find_d_clear() {
+	for (int x_center = 0; x_center < columns; x_center++) {
+		for (int y_center = 0; y_center < rows; y_center++) {
+			if (get_tile_state(x_center, y_center) == states::covered || get_tile_state(x_center, y_center) == states::flagged) continue;
+			int adjacent_mines = get_tile_type(x_center, y_center);
+			if (adjacent_mines == 0) continue;
+			int flagged = check_adjacent_flags(x_center, y_center);
+			int uncovered = check_adjacent_uncovered(x_center, y_center);
+			int tiles = check_adjacent_tiles(x_center, y_center);
+			if (adjacent_mines == flagged && tiles > uncovered + flagged)
+				return { x_center,y_center };
+		}
+	}
+	return { -1,-1 };
+}
+
+std::pair<int,int> minesweeper::MSGame::find_mine() {
+	for (int x = 0; x < columns; x++) {
+		for (int y = 0; y < rows; y++) {
+			if (fequals(p_mat[get_index_from_xy(x, y)], 1) && get_tile_state(x, y) != states::flagged && get_tile_state(x, y) != states::uncovered) {
+				return { x,y };
+			}
+		}
+	}
+	return { -1,-1 };
+}
+
+void minesweeper::MSGame::clear_p_mat()
+{
+	for (int i = 0; i < p_mat.size(); i++) {
+		p_mat[i] = -1;
+	}
+}
+
+std::vector<std::pair<int, int>> minesweeper::MSGame::get_min_p_tuples()
+{
+	std::vector<std::pair<int, int>> min_p_tuples = std::vector<std::pair<int, int>>();
+	float min_p = 0.99;
+	for (int x = 0; x < columns; x++) {
+		for (int y = 0; y < rows; y++) {
+			if (fequals(p_mat[get_index_from_xy(x, y)], 0)) {
+				min_p_tuples.clear();
+				min_p_tuples.push_back({ x,y });
+				return min_p_tuples;
+			}
+			if (p_mat[get_index_from_xy(x, y)] < min_p) {
+				min_p = p_mat[get_index_from_xy(x, y)];
+				min_p_tuples.clear();
+				min_p_tuples.push_back({ x,y });
+			} else if (p_mat[get_index_from_xy(x, y)] == min_p)
+				min_p_tuples.push_back({ x,y });
+		}
+	}
+	return min_p_tuples;
+}
+
+int minesweeper::MSGame::count_covered() {
+	int n = 0;
+	for (int x = 0; x < columns; x++) {
+		for (int y = 0; y < rows; y++) {
+			if (get_tile_state(x, y) == states::covered)
+				n++;
+		}
+	}
+	return n;
+}
+
+void minesweeper::MSGame::set_adjacent_p(int x_center, int y_center)
+{
+	int adjacent_mines = get_tile_type(x_center, y_center);
+	if (adjacent_mines == 0) return;
+	int flagged = check_adjacent_flags(x_center, y_center);
+	int uncovered = check_adjacent_uncovered(x_center, y_center);
+	int tiles = check_adjacent_tiles(x_center, y_center);
+	if (tiles == uncovered + flagged) return;
+	float p = (float)(adjacent_mines - flagged) / (tiles - uncovered - flagged);
+	for (int x = x_center - 1; x <= x_center + 1; x++) {
+		for (int y = y_center - 1; y <= y_center + 1; y++) {
+			if (x >= 0 && x < columns && y >= 0 && y < rows && !(x == x_center && y == y_center)) {
+				if (get_tile_state(x, y) == states::covered)
+					if (p > p_mat[get_index_from_xy(x, y)] && !fequals(p_mat[get_index_from_xy(x, y)], 0))
+						p_mat[get_index_from_xy(x, y)] = p;
+			}
+		}
+	}
+}
+
+bool minesweeper::MSGame::is_subset(std::vector<std::pair<int, int>> other, std::vector<std::pair<int, int>> superset) {
+	std::set<std::pair<int, int>> s;
+	for (auto e: superset)
+		s.insert(e);
+	for (auto e : other)
+		s.insert(e);
+	if (s.size() == superset.size())
+		return true;
+	return false;
+	
+}
+
+std::pair<int, std::pair<int, int>> minesweeper::MSGame::find_overlap() {
+	for (int x = 0; x < columns; x++) {
+		for (int y = 0; y < rows; y++) {
+			if (get_tile_state(x, y) == states::uncovered) {
+				std::pair<int, std::pair<int, int>> overlap = account_for_overlap(x, y);
+				if (get<0>(overlap) != -1) {
+					return overlap;
+				}
+			}
+		}
+	}
+	return { -1, {-1,-1} };
+}
+
+std::pair<int,std::pair<int,int>> minesweeper::MSGame::account_for_overlap(int x_center, int y_center) {
+	std::vector<std::pair<int, int>> adjacent_covered;
+	for (int x = x_center - 1; x <= x_center + 1; x++) {
+		for (int y = y_center - 1; y <= y_center + 1; y++) {
+			if (x >= 0 && x < columns && y >= 0 && y < rows && !(x == x_center && y == y_center)) {
+				if (get_tile_state(x, y) == states::covered)
+					adjacent_covered.push_back({ x,y });
+			}
+		}
+	}
+	for (int x = x_center - 1; x <= x_center + 1; x++) {
+		for (int y = y_center - 1; y <= y_center + 1; y++) {
+			if (x >= 0 && x < columns && y >= 0 && y < rows && !(x == x_center && y == y_center)) {
+				std::vector<std::pair<int, int>> adjacent_covered_other;
+				for (int x_other = x - 1; x_other <= x + 1; x_other++) {
+					for (int y_other = y - 1; y_other <= y + 1; y_other++) {
+						if (x_other >= 0 && x_other < columns && y_other >= 0 && y_other < rows && !(x_other == x_center && y_other == y_center) && !(x_other == x && y_other == y)) {
+							if (get_tile_state(x_other, y_other) == states::covered)
+								adjacent_covered_other.push_back({ x_other,y_other });
+						}
+					}
+				}
+				if (is_subset(adjacent_covered, adjacent_covered_other)) { // adjacent_covered_other is superset
+					int adjacent_mines = get_tile_type(x_center, y_center);
+					int adjacent_mines_other = get_tile_type(x, y);
+					if (std::abs(adjacent_mines - adjacent_mines_other) == 0) {
+						for (auto e : adjacent_covered_other) {
+							if (std::find(adjacent_covered.begin(), adjacent_covered.end(), e) == adjacent_covered.end()) { // not found
+								return { 1, {get<0>(e), get<1>(e)} };
+							}
+						}
+					} else if (std::abs(adjacent_mines - adjacent_mines_other) == 1) {
+						for (auto e : adjacent_covered_other) {
+							if (std::find(adjacent_covered.begin(), adjacent_covered.end(), e) == adjacent_covered.end()) { // not found
+								return { 0, {get<0>(e), get<1>(e)} };
+							}
+						}
+					}
+				}
+				if (is_subset(adjacent_covered_other, adjacent_covered)) {
+					int adjacent_mines = get_tile_type(x_center, y_center);
+					int adjacent_mines_other = get_tile_type(x, y);
+					if (std::abs(adjacent_mines - adjacent_mines_other) == 0) {
+						for (auto e : adjacent_covered) {
+							if (std::find(adjacent_covered_other.begin(), adjacent_covered_other.end(), e) == adjacent_covered_other.end()) { // not found
+								return { 1, {get<0>(e), get<1>(e)} };
+							}
+						}
+					}
+					else if (std::abs(adjacent_mines - adjacent_mines_other) == 1) {
+						for (auto e : adjacent_covered_other) {
+							if (std::find(adjacent_covered_other.begin(), adjacent_covered_other.end(), e) == adjacent_covered_other.end()) { // not found
+								return { 0, {get<0>(e), get<1>(e)} };
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return { -1, {-1,-1} };
+}
+
+void minesweeper::MSGame::calc_p_mat()
+{
+	clear_p_mat();
+	for (int x = 0; x < columns; x++) {
+		for (int y = 0; y < rows; y++) {
+			int i = get_index_from_xy(x, y);
+			if (get_tile_state(x, y) == states::flagged)
+				p_mat[i] = 1;
+			else if (get_tile_state(x, y) == states::uncovered) {
+				p_mat[i] = 0;
+				set_adjacent_p(x, y);
+			}
+		}
+	}
+	float avg_p = (float)remaining_mines / count_covered();
+	for (int x = 0; x < columns; x++) {
+		for (int y = 0; y < rows; y++) {
+			int i = get_index_from_xy(x, y);
+			if (get_tile_state(x, y) == states::covered && p_mat[i] < 0) {
+				p_mat[i] = avg_p;
+			}
+		}
+	}
+}
+
+
 
 // Apply double mouse click operation
 std::vector<std::pair<int, int>> MSGame::d_click_clear(int x, int y) {

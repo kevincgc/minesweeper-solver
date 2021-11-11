@@ -2,6 +2,8 @@
 
 #pragma once
 #include "game_window.h"
+#include <thread>
+#include <chrono>
 
 class game_application : public Gtk::Application {
 protected:
@@ -9,6 +11,7 @@ protected:
 
 public:
 	static Glib::RefPtr<game_application> create();
+	void step();
 
 protected:
 	void on_startup() override;
@@ -30,6 +33,8 @@ private:
 
 	// handler for about game menu
 	void on_menu_game_about();
+	void on_menu_game_step();
+	
 
 	// handler to resize window based on game code
 	void on_code_resize_game_window(int height, int width, int mines, std::string game_code);
