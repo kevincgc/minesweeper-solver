@@ -104,6 +104,7 @@ namespace minesweeper {
 		int check_adjacent_covered(int x, int y);
 		int check_adjacent_uncovered(int x, int y);
 		int check_adjacent_tiles(int x, int y);
+		int check_remaining_mines(int x, int y);
 		int set_flag(int x, int y);
 		void inc_remaining() { remaining_mines++; }
 		void dec_remaining() { remaining_mines--; }
@@ -116,8 +117,8 @@ namespace minesweeper {
 		std::pair<int, int> find_mine();
 		int count_covered();
 		std::pair<int, int> find_d_clear();
-		std::pair<int, std::pair<int, int>> account_for_overlap(int x_center, int y_center);
-		std::pair<int, std::pair<int, int>> find_overlap();
+		std::tuple<int, std::pair<int, int>, std::pair<int, int>, std::pair<int, int>> find_overlap_for_tile(int x_center, int y_center);
+		std::tuple<int, std::pair<int, int>, std::pair<int, int>, std::pair<int, int>> find_overlap();
 		bool is_subset(std::vector<std::pair<int, int>> other, std::vector<std::pair<int, int>> superset);
 
 

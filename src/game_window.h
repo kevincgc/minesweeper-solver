@@ -118,6 +118,9 @@ public:
 
 	using code_resize_signal = sigc::signal<void(int, int, int, std::string) > ;
 	code_resize_signal signal_code_resize();
+	minesweeper::MSGame m_game{ 16, 30, 99 };	// default game = hard
+	void update_on_win_or_loss();
+	void new_game_start_timer();
 
 protected:
 
@@ -132,7 +135,7 @@ protected:
 	int game_mines = 99;
 	int selection = 2;		// Easy = 0; Medium = 1; Hard = 2; Custom = 3;
 	std::string game_code = "";
-	minesweeper::MSGame m_game{ 16, 30, 99 };	// default game = hard
+	
 	sigc::connection timer_connection;
 
 	// Main draw functions for the two drawing areas

@@ -143,9 +143,17 @@ void game_application::on_menu_game_code() {
 using Clock = std::chrono::high_resolution_clock;
 int ctr = 0;
 gboolean stepg(gpointer data) {
-	((game_application*)data)->step();
-	if (ctr == 0)
+	if (((game_application*)data)->g_window->m_game.get_game_state() == minesweeper::g_states::new_game)
+		((game_application*)data)->g_window->new_game_start_timer();
+	if (((game_application*)data)->g_window->m_game.get_game_state() == minesweeper::g_states::lost ||
+		((game_application*)data)->g_window->m_game.get_game_state() == minesweeper::g_states::won) {
+		std::cout << "ending auto lost: " << (((game_application*)data)->g_window->m_game.get_game_state() == minesweeper::g_states::lost) << std::endl; 
+		std::cout << "won: " << (((game_application*)data)->g_window->m_game.get_game_state() == minesweeper::g_states::won) << std::endl;
+		((game_application*)data)->g_window->update_on_win_or_loss();
 		return false;
+	}
+		
+	((game_application*)data)->step();
 	return true;
 }
 
@@ -161,8 +169,7 @@ void game_application::on_menu_game_step() {
 	//		reps++;
 	//	}
 	//}
-	ctr = 10;
-	g_timeout_add(10, stepg, this);
+	g_timeout_add(15, stepg, this);
 	std::vector<std::pair<int, int>> v1 = { {1,1},{2,2},{2,3},{3,3},{5,4} };
 	std::vector<std::pair<int, int>> v2 = { {2,3},{3,3},{2,2}, {3,2} };
 	std::cout << g_window->m_game.is_subset(v1, v2) << std::endl;
@@ -190,19 +197,21 @@ void game_application::step() {
 		std::cout << "d_clear at: (" << std::get<0>(d) << "," << std::get<1>(d) << ")" << std::endl;
 		return;
 	}
-	std::pair<int, std::pair<int, int>> overlap = g_window->m_game.find_overlap();
+	std::tuple<int, std::pair<int, int>, std::pair<int, int>, std::pair<int, int>> overlap = g_window->m_game.find_overlap();
 	if (get<0>(overlap) == 0) {
 		std::vector <std::pair<int, int>> cells;
-		cells = g_window->m_game.l_click_clear(overlap.second.first, overlap.second.second);
+		std::pair<int, int> center = get<1>(overlap);
+		cells = g_window->m_game.l_click_clear(center.first, center.second);
 		g_window->redraw_cells(cells, game_window::draw_selection::reveal);
-		std::cout << "overlap_clear at: (" << overlap.second.first << "," << overlap.second.second << ")" << std::endl;
+		std::cout << "overlap_clear at: (" << center.first << "," << center.second << ")" << std::endl;
 		return;
 	} else if (get<0>(overlap) == 1) {
-		g_window->m_game.set_flag(overlap.second.first, overlap.second.second);
+		std::pair<int, int> center = get<1>(overlap);
+		g_window->m_game.set_flag(center.first, center.second);
 		std::vector <std::pair<int, int>> cells;
-		cells.push_back({ overlap.second.first, overlap.second.second });
+		cells.push_back({ center.first, center.second });
 		g_window->redraw_cells(cells, game_window::draw_selection::flag);
-		std::cout << "mine at: (" << overlap.second.first << "," << overlap.second.second << ")" << std::endl;
+		std::cout << "mine at: (" << center.first << "," << center.second << ")" << std::endl;
 		return;
 	}
 	std::vector<std::pair<int, int>> min_p_tuples = g_window->m_game.get_min_p_tuples();

@@ -244,6 +244,19 @@ int MSGame::check_adjacent_tiles(int x, int y) {
 	return entities;
 }
 
+int MSGame::check_remaining_mines(int x, int y) {
+	int entities = 0;
+	int new_x, new_y;
+	int flagged = check_adjacent_flags(x, y);
+	int mines = get_tile_type(x, y);
+	if (mines < 0) {
+		std::cout << "you dun goofed" << std::endl;
+		return -1;
+	}
+
+	return mines - flagged;
+}
+
 void MSGame::reset() {
 	game_tiles.clear();
 	game_tiles.resize(rows * columns);
@@ -359,6 +372,8 @@ std::vector<std::pair<int, int>> minesweeper::MSGame::get_min_p_tuples()
 	float min_p = 0.99;
 	for (int x = 0; x < columns; x++) {
 		for (int y = 0; y < rows; y++) {
+			if (get_tile_state(x, y) == states::uncovered || get_tile_state(x, y) == states::flagged)
+				continue;
 			if (fequals(p_mat[get_index_from_xy(x, y)], 0)) {
 				min_p_tuples.clear();
 				min_p_tuples.push_back({ x,y });
@@ -408,6 +423,10 @@ void minesweeper::MSGame::set_adjacent_p(int x_center, int y_center)
 
 bool minesweeper::MSGame::is_subset(std::vector<std::pair<int, int>> other, std::vector<std::pair<int, int>> superset) {
 	std::set<std::pair<int, int>> s;
+	if (other.size() == 0 || superset.size() == 0)
+		return false;
+	if ((int)superset.size() - (int)other.size() != 1)
+		return false;
 	for (auto e: superset)
 		s.insert(e);
 	for (auto e : other)
@@ -418,21 +437,21 @@ bool minesweeper::MSGame::is_subset(std::vector<std::pair<int, int>> other, std:
 	
 }
 
-std::pair<int, std::pair<int, int>> minesweeper::MSGame::find_overlap() {
+std::tuple<int, std::pair<int, int>, std::pair<int, int>, std::pair<int, int>> minesweeper::MSGame::find_overlap() {
 	for (int x = 0; x < columns; x++) {
 		for (int y = 0; y < rows; y++) {
-			if (get_tile_state(x, y) == states::uncovered) {
-				std::pair<int, std::pair<int, int>> overlap = account_for_overlap(x, y);
+			if (get_tile_state(x, y) == states::uncovered && get_tile_type(x, y) > 0) {
+				std::tuple<int, std::pair<int, int>, std::pair<int, int>, std::pair<int, int>> overlap = find_overlap_for_tile(x, y);
 				if (get<0>(overlap) != -1) {
 					return overlap;
 				}
 			}
 		}
 	}
-	return { -1, {-1,-1} };
+	return { -1, {-1,-1}, {-1,-1}, {-1,-1} };
 }
 
-std::pair<int,std::pair<int,int>> minesweeper::MSGame::account_for_overlap(int x_center, int y_center) {
+std::tuple<int, std::pair<int, int>, std::pair<int, int>, std::pair<int, int>> minesweeper::MSGame::find_overlap_for_tile(int x_center, int y_center) {
 	std::vector<std::pair<int, int>> adjacent_covered;
 	for (int x = x_center - 1; x <= x_center + 1; x++) {
 		for (int y = y_center - 1; y <= y_center + 1; y++) {
@@ -445,6 +464,8 @@ std::pair<int,std::pair<int,int>> minesweeper::MSGame::account_for_overlap(int x
 	for (int x = x_center - 1; x <= x_center + 1; x++) {
 		for (int y = y_center - 1; y <= y_center + 1; y++) {
 			if (x >= 0 && x < columns && y >= 0 && y < rows && !(x == x_center && y == y_center)) {
+				if (get_tile_type(x, y) <= 0 || get_tile_state(x, y) == states::covered || get_tile_state(x, y) == states::flagged)
+					continue;
 				std::vector<std::pair<int, int>> adjacent_covered_other;
 				for (int x_other = x - 1; x_other <= x + 1; x_other++) {
 					for (int y_other = y - 1; y_other <= y + 1; y_other++) {
@@ -455,36 +476,36 @@ std::pair<int,std::pair<int,int>> minesweeper::MSGame::account_for_overlap(int x
 					}
 				}
 				if (is_subset(adjacent_covered, adjacent_covered_other)) { // adjacent_covered_other is superset
-					int adjacent_mines = get_tile_type(x_center, y_center);
-					int adjacent_mines_other = get_tile_type(x, y);
+					int adjacent_mines = check_remaining_mines(x_center, y_center);
+					int adjacent_mines_other = check_remaining_mines(x, y);
 					if (std::abs(adjacent_mines - adjacent_mines_other) == 0) {
 						for (auto e : adjacent_covered_other) {
 							if (std::find(adjacent_covered.begin(), adjacent_covered.end(), e) == adjacent_covered.end()) { // not found
-								return { 1, {get<0>(e), get<1>(e)} };
+								return { 0, {get<0>(e), get<1>(e)}, {x_center, y_center}, { x, y } };
 							}
 						}
 					} else if (std::abs(adjacent_mines - adjacent_mines_other) == 1) {
 						for (auto e : adjacent_covered_other) {
 							if (std::find(adjacent_covered.begin(), adjacent_covered.end(), e) == adjacent_covered.end()) { // not found
-								return { 0, {get<0>(e), get<1>(e)} };
+								return { 1, {get<0>(e), get<1>(e)}, {x_center, y_center}, { x, y } };
 							}
 						}
 					}
 				}
 				if (is_subset(adjacent_covered_other, adjacent_covered)) {
-					int adjacent_mines = get_tile_type(x_center, y_center);
-					int adjacent_mines_other = get_tile_type(x, y);
+					int adjacent_mines = check_remaining_mines(x_center, y_center);
+					int adjacent_mines_other = check_remaining_mines(x, y);
 					if (std::abs(adjacent_mines - adjacent_mines_other) == 0) {
 						for (auto e : adjacent_covered) {
 							if (std::find(adjacent_covered_other.begin(), adjacent_covered_other.end(), e) == adjacent_covered_other.end()) { // not found
-								return { 1, {get<0>(e), get<1>(e)} };
+								return { 0, {get<0>(e), get<1>(e)}, {x_center, y_center}, { x, y } };
 							}
 						}
 					}
 					else if (std::abs(adjacent_mines - adjacent_mines_other) == 1) {
 						for (auto e : adjacent_covered_other) {
 							if (std::find(adjacent_covered_other.begin(), adjacent_covered_other.end(), e) == adjacent_covered_other.end()) { // not found
-								return { 0, {get<0>(e), get<1>(e)} };
+								return { 1, {get<0>(e), get<1>(e)}, {x_center, y_center}, { x, y } };
 							}
 						}
 					}
@@ -492,7 +513,7 @@ std::pair<int,std::pair<int,int>> minesweeper::MSGame::account_for_overlap(int x
 			}
 		}
 	}
-	return { -1, {-1,-1} };
+	return { -1, {-1,-1}, {-1,-1}, {-1,-1} };
 }
 
 void minesweeper::MSGame::calc_p_mat()

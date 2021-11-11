@@ -12,6 +12,7 @@ protected:
 public:
 	static Glib::RefPtr<game_application> create();
 	void step();
+	game_window* g_window = nullptr;
 
 protected:
 	void on_startup() override;
@@ -44,7 +45,7 @@ private:
 	Glib::RefPtr<Gtk::Builder> g_refBuilder;
 	// keep track of window instances so they can be closed (deleted) and reopened (new)
 
-	game_window* g_window = nullptr;
+	
 	game_code_window* gc_window = nullptr;
 	game_about_window* about_window = nullptr;
 	settings_window* s_window = nullptr;

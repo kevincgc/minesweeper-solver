@@ -681,6 +681,48 @@ bool game_window::on_mines_da_key_pressed(guint keyval, guint, Gdk::ModifierType
 	return false;
 }
 
+void game_window::update_on_win_or_loss() {
+	if (m_game.get_game_state() == minesweeper::g_states::lost) {
+		timer_connection.disconnect();//do lose stuff here;
+		update_head("lost_head");
+
+		auto cr = Cairo::Context::create(mines_da_surface);
+
+		for (int x = 0; x < m_game.get_cols(); x++) {
+			for (int y = 0; y < m_game.get_rows(); y++) {
+				int tile_type = m_game.get_tile_type(x, y);
+				if (tile_type >= 0 && m_game.get_tile_state(x, y) != minesweeper::states::flagged)
+					continue;
+
+				if (tile_type == -2) {
+					Gdk::Cairo::set_source_pixbuf(cr, g_icons["exploded"], 32 * x, 32 * y);
+				}
+				else {
+					if (m_game.get_tile_state(x, y) == minesweeper::states::flagged) {
+						if (tile_type == -1)
+							Gdk::Cairo::set_source_pixbuf(cr, g_icons["flagged"], 32 * x, 32 * y);
+						else
+							Gdk::Cairo::set_source_pixbuf(cr, g_icons["incorrect"], 32 * x, 32 * y);
+					}
+					else
+						Gdk::Cairo::set_source_pixbuf(cr, g_icons["mine"], 32 * x, 32 * y);
+				}
+				cr->paint();
+			}
+		}
+	}
+	if (m_game.get_game_state() == minesweeper::g_states::won) {
+		timer_connection.disconnect();
+		update_head("won_head");
+	}
+	mines_da.queue_draw();
+	main_da.queue_draw();
+}
+
+void game_window::new_game_start_timer() {
+	timer_connection = Glib::signal_timeout().connect_seconds(sigc::mem_fun(*this, &game_window::timer_handler), 1);
+}
+
 void game_window::redraw_cells(std::vector<std::pair<int, int>>& cells, game_window::draw_selection draw_type) {
 
 	if (cells.empty())
